@@ -172,7 +172,7 @@ public class ARVisionRenderer implements Renderer{
 		translateM(translationMatrix[1], 0, 0f, 0f, -ztranslate);
 		translateM(translationMatrix[2], 0, 0f, -2f, -ztranslate);
 		translateM(translationMatrix[3], 0, 0f, 0f, -4);
-		translateM(translationMatrix[4], 0, 0f, 0f, -ztranslate);
+		translateM(translationMatrix[4], 0, 0f, -2f, -ztranslate);
 		
 		rotateM(rotationMatrix[0], 0, 0, 0, 1, 0);
 		rotateM(rotationMatrix[1], 0, 0, 0, 1, 0);
@@ -327,9 +327,14 @@ public class ARVisionRenderer implements Renderer{
     public void setObject(int id, float angleX, float angleY, float angleZ) {
 		setIdentityM(translationMatrix[id+2], 0);
 		setIdentityM(rotationMatrix[id+2], 0);
-    	translateM(translationMatrix[id+2], 0, cameradx, camerady + (float) (busz*Math.tan(Math.toRadians(angleY))), cameradz -busz);
+    	translateM(translationMatrix[id+2], 0, 0, (float) (busz*Math.tan(Math.toRadians(angleY))), -busz);
+    	rotateM(rotationMatrix[id+2], 0, 270, 1, 1, 0);
+    	multiplyMM(modelViewMatrix[id+2], 0, translationMatrix[id+2], 0, rotationMatrix[id+2], 0);
+    	
+    	setIdentityM(rotationMatrix[id+2], 0);
     	rotateM(rotationMatrix[id+2], 0, (-angleX-90)%360, 0, 1, 0);
-    	multiplyMM(modelMatrix[id+2], 0, rotationMatrix[id+2], 0, translationMatrix[id+2], 0);
+    	multiplyMM(modelMatrix[id+2], 0, rotationMatrix[id+2], 0, modelViewMatrix[id+2], 0);
+    	translateM(modelMatrix[id+2], 0, -cameradx, -camerady, -cameradz);
 		multiplyMM(modelViewMatrix[id+2], 0, viewMatrix, 0, modelMatrix[id+2], 0);
 		multiplyMM(finalMatrix[id+2], 0, projectionMatrix, 0, modelViewMatrix[id+2], 0);	
     	

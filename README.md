@@ -2,6 +2,7 @@ Augmented Object Detector / Viewer on Android
 ----------------------------------------------
 ###Introduction
 In this project, we explored an application of augmented reality by creating an Android app that is able to recognize trained objects from the camera video stream and render an aligned 3D model of the object in the screen virtual space. Furthermore, the location and orientation of either the camera or rendered object can be easily maneuvered by swiping the screen, rotating or moving the camera. With all these features, the user is able to scan an object (a real object or an image), move, rotate, pinpoint its 3D model to a geographical location as well as walk into an augmented virtual scene. 
+<img src="http://www.ocf.berkeley.edu/~andrewxz/pics/androidAR.jpg">
 
 ###OpenGL ES 2.0
 The user interface of our application consists of an OpenGL rendered graphics view overlaid on top of the live camera stream. We have coded multiple programmable vertex and fragment shaders in GLSL. These shaders handle model, view and projection transformations on vertices and texture mapping on object faces.

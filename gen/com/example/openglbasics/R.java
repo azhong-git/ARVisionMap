@@ -47,24 +47,18 @@ containing a value of this type.
         public static final int activity_vertical_margin=0x7f060001;
     }
     public static final class drawable {
-        public static final int bus=0x7f020000;
-        public static final int chair=0x7f020001;
-        public static final int chairobj=0x7f020002;
-        public static final int compass=0x7f020003;
-        public static final int compass0=0x7f020004;
-        public static final int cory=0x7f020005;
-        public static final int eecslogo=0x7f020006;
-        public static final int ic_launcher=0x7f020007;
-        public static final int icon=0x7f020008;
-        public static final int obj2opengl=0x7f020009;
-        public static final int obj2vertex=0x7f02000a;
-        public static final int qualcomm=0x7f02000b;
-        public static final int soda=0x7f02000c;
-        public static final int surf=0x7f02000d;
-        public static final int surf_old=0x7f02000e;
-        public static final int surfobj=0x7f02000f;
-        public static final int table=0x7f020010;
-        public static final int tableobj=0x7f020011;
+        public static final int chair=0x7f020000;
+        public static final int chairobj=0x7f020001;
+        public static final int compass=0x7f020002;
+        public static final int cory=0x7f020003;
+        public static final int eecslogo=0x7f020004;
+        public static final int ic_launcher=0x7f020005;
+        public static final int icon=0x7f020006;
+        public static final int soda=0x7f020007;
+        public static final int surf=0x7f020008;
+        public static final int surfobj=0x7f020009;
+        public static final int table=0x7f02000a;
+        public static final int tableobj=0x7f02000b;
     }
     public static final class id {
         public static final int action_settings=0x7f050006;
