@@ -12,6 +12,7 @@ public class ColorShaderProgram extends Program {
 	private final int uMatrixLocation;
 	private final int uColorLocation;	
 	private final int aPositionLocation;
+	private final int aColorLocation;
 	
 	public ColorShaderProgram(Context context) {
 		super(context, R.raw.simple_vertex_shader, R.raw.simple_fragment_shader);
@@ -19,6 +20,7 @@ public class ColorShaderProgram extends Program {
 		uColorLocation = glGetUniformLocation(program, U_COLOR);
 		uMatrixLocation = glGetUniformLocation(program, U_MATRIX);
 		aPositionLocation = glGetAttribLocation(program, A_POSITION);
+		aColorLocation = glGetAttribLocation(program, A_COLOR);
 		
 	}
 	
@@ -29,5 +31,9 @@ public class ColorShaderProgram extends Program {
 	
 	public int getPositionAttributeLocation() {
 		return aPositionLocation;
+	}
+	
+	public int getColorAttributeLocation() {
+		return aColorLocation;
 	}
 }

@@ -25,6 +25,7 @@ import javax.microedition.khronos.opengles.GL10;
 import android.content.Context;
 import android.opengl.GLSurfaceView.Renderer;
 
+import com.example.objects.Arrow;
 import com.example.objects.Caption;
 import com.example.objects.Puck;
 import com.example.objects.Square;
@@ -101,7 +102,9 @@ public class ARVisionRenderer implements Renderer{
 	
 	private Square compass = new Square();
 	private int compassTexture;
-		
+	
+	private Arrow puck = new Arrow(1, 2, (float)0.5 ,1 ,32);
+	
 	//private Block block;
 	
 	private TextureShaderProgram textureProgram;
@@ -173,13 +176,16 @@ public class ARVisionRenderer implements Renderer{
 		translateM(translationMatrix[2], 0, 0f, -2f, -ztranslate);
 		translateM(translationMatrix[3], 0, 0f, 0f, -4);
 		translateM(translationMatrix[4], 0, 0f, -2f, -ztranslate);
+		rotateM(translationMatrix[5], 0, 90, 0, 1, 0);
+		translateM(translationMatrix[5], 0, 0f, 0f, -zpuck);
 		
 		rotateM(rotationMatrix[0], 0, 0, 0, 1, 0);
 		rotateM(rotationMatrix[1], 0, 0, 0, 1, 0);
 		rotateM(rotationMatrix[2], 0, 90, 0, 1, 0);
-		rotateM(rotationMatrix[3], 0, 100, 0, 1, 0);
+		rotateM(rotationMatrix[3], 0, 120, 0, 1, 0);
 		rotateM(rotationMatrix[4], 0, 45, 0, 1, 0);
-
+		rotateM(rotationMatrix[5], 0, -135, 1, 0, 0);
+		rotateM(rotationMatrix[5], 0,0, 0, 0, 1);
 
 		for (int i = 0; i < numObjects; i++) {
 			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0, translationMatrix[i], 0);
@@ -222,6 +228,11 @@ public class ARVisionRenderer implements Renderer{
 		objectProgram.setUniforms(finalMatrix[4], textures[4]);
 		object[2].bindData(objectProgram);
 		object[2].draw();
+		
+		colorProgram.useProgram();
+		colorProgram.setUniforms(finalMatrix[5], 0f, 0.40f, 0.20f, 0.3f);
+		puck.bindData(colorProgram);
+		puck.draw();
 		
 		transparentProgram.useProgram();
 		transparentProgram.setUniforms(compassFinalMatrix, compassTexture);
@@ -296,6 +307,10 @@ public class ARVisionRenderer implements Renderer{
 			multiplyMM(modelViewMatrix[i], 0, viewMatrix, 0, modelMatrix[i], 0);
 			multiplyMM(finalMatrix[i], 0, projectionMatrix, 0, modelViewMatrix[i], 0);	
 		}
+		multiplyMM(modelMatrix[5], 0,  translationMatrix[5], 0, rotationMatrix[5], 0);
+		multiplyMM(modelViewMatrix[5], 0, viewMatrix, 0, modelMatrix[5], 0);
+		multiplyMM(finalMatrix[5], 0, projectionMatrix, 0, modelViewMatrix[5], 0);	
+		
 		setIdentityM(compassRotationMatrix, 0);
 		rotateM(compassRotationMatrix, 0, mAzimuth, 0f, 1f, 0f);
 		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0, compassRotationMatrix, 0);

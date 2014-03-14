@@ -14,7 +14,7 @@ public class Program {
 	protected static final String U_MATRIX = "u_Matrix";
 	protected static final String U_TEXTURE_UNIT = "u_TextureUnit";
 	protected static final String U_COLOR = "u_Color";
-	
+	protected static final String A_COLOR = "a_Color";
 	protected final int program;
 	
 	protected Program(Context context, int vertexShaderResourceId, int fragmentShaderResourceId) {
