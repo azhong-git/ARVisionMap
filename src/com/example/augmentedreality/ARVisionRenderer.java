@@ -41,46 +41,57 @@ import com.example.util.TransparentTextureShaderProgram;
 public class ARVisionRenderer implements Renderer{
 	
 	private final Context context;
+	//--------------------------- CONSTANTS ----------------------------------
 	private final int MAXNUM_TEXTURES = 10;
 	
-	private final float [] projectionMatrix = new float[16];
-	private final float [] viewMatrix = new float [16];
+	//--------------------------- matrices init -------------------------------
+	// general project matrix and view matrix
+	private final float [] sensorProjectionMatrix = new float[16];
+	private final float [] sensorViewMatrix = new float [16];
 	
 	// model, view, final matrices for each object
 	private final float [][] modelMatrix = new float[MAXNUM_TEXTURES][];
 	private final float [][] modelViewMatrix = new float[MAXNUM_TEXTURES][];
-	private final float [][] finalMatrix = new float[MAXNUM_TEXTURES][];
-	
-	// helper matrices rotation and translation
+	private final float [][] finalMatrix = new float[MAXNUM_TEXTURES][];	
 	private final float [][] rotationMatrix = new float[MAXNUM_TEXTURES][];
 	private final float [][] translationMatrix = new float[MAXNUM_TEXTURES][];
 	
+	// separate matrices for compass (compass never moves out of screen)
 	private final float [] compassModelMatrix = new float [16];
 	private final float [] compassRotationMatrix = new float [16];
 	private final float [] compassTranslationMatrix = new float [16];
 	private final float [] compassViewMatrix = new float [16];
 	private final float [] compassModelViewMatrix = new float [16];
 	private final float [] compassFinalMatrix = new float [16];
+	
+	// helper matrices for setting up camera lookat
+	float [] forward = new float [3];
+	float [] up_portrait = new float [3];
+	float [] up_landscape = new float [3];
 
+	//---------------------------- parameters init ------------------------------------
 	// projection matrix parameters
 	private final float far = 10f;
 	private final float near = 0.2f;
+	
+	// distance on the z axis
+	private final float [] zdis = new float [MAXNUM_TEXTURES];
+
 	private final float ztranslate = 2.5f;
 	private final float busz = 1.0f;
 	private final float zpuck = 7f;
 	private final float zcompass = 1f;
 	
+	// camera location
 	private float cameradx = 0;
 	private float camerady = 0;
 	private float cameradz = 0;
 	
+	// other parameters
 	private float x = 0;
 	private float y = 0;
 	private float z = 0;
-	
-	float [] forward = new float [3];
-	float [] up_portrait = new float [3];
-	float [] up_landscape = new float [3];
+
 	
 	private enum Mode {
 		MoveObject, MoveCamera;
@@ -88,25 +99,29 @@ public class ARVisionRenderer implements Renderer{
 	
 	private Mode mode = Mode.MoveCamera;
 
+	//-------------------------------  Objects initialization -------------------------------
+	
 	// number of textures
 	private int numCaptionTextures = 2;
 	private int numRawObjectTextures = 3;
-	private int numObjects = numCaptionTextures + numRawObjectTextures + 1;
 	
-	// caption object array
+	// number of arrows (no texture)
+	private int numArrows = 1; 
+	
+	// number of objects (used for matrices)
+	private int numObjects = numCaptionTextures + numRawObjectTextures + numArrows;
+	
+	// objects with textures
 	private Caption [] caption = new Caption [numCaptionTextures];
 	private RawObject [] object = new RawObject [numRawObjectTextures];
-	
-	// texture Ids
 	private int [] textures = new int [numCaptionTextures + numRawObjectTextures];
-	
 	private Square compass = new Square();
 	private int compassTexture;
 	
-	private Arrow puck = new Arrow(1, 2, (float)0.5 ,1 ,32);
-	
-	//private Block block;
-	
+	// object without texture
+	private Arrow [] arrows = new Arrow [numArrows];	
+
+	// shader programs	
 	private TextureShaderProgram textureProgram;
 	private TransparentTextureShaderProgram transparentProgram;
 	private ColorShaderProgram colorProgram;
@@ -154,13 +169,15 @@ public class ARVisionRenderer implements Renderer{
 		textures[3] = TextureHelper.loadTexture(context, R.drawable.table);
 		textures[4] = TextureHelper.loadTexture(context, R.drawable.chair);		
 		compassTexture = TextureHelper.loadTexture(context, R.drawable.compass);
+		
+		arrows[0] = new Arrow(1, 2, (float)0.5 ,1 ,32); 
 	}
 	
 	@Override
 	public void onSurfaceChanged(GL10 glUnused, int width, int height) {
 		glViewport( 0, 0, width, height );
-		MatrixHelper.perspectiveM(projectionMatrix, 45, (float) width / (float) height, near, far);
-		setLookAtM(viewMatrix, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0);
+		MatrixHelper.perspectiveM(sensorProjectionMatrix, 45, (float) width / (float) height, near, far);
+		setLookAtM(sensorViewMatrix, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0);
 		setLookAtM(compassViewMatrix, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0);
 		for (int i = 0; i < numObjects; i++) {
 			setIdentityM(modelMatrix[i], 0);
@@ -189,12 +206,12 @@ public class ARVisionRenderer implements Renderer{
 
 		for (int i = 0; i < numObjects; i++) {
 			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0, translationMatrix[i], 0);
-			multiplyMM(modelViewMatrix[i], 0, viewMatrix, 0, modelMatrix[i], 0);
-			multiplyMM(finalMatrix[i], 0, projectionMatrix, 0, modelViewMatrix[i], 0);
+			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0, modelMatrix[i], 0);
+			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0, modelViewMatrix[i], 0);
 		}
 		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0, compassRotationMatrix, 0);
 		multiplyMM(compassModelViewMatrix, 0, compassViewMatrix, 0, compassModelMatrix, 0);
-		multiplyMM(compassFinalMatrix, 0, projectionMatrix, 0, compassModelViewMatrix, 0);
+		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0, compassModelViewMatrix, 0);
 	}
 	
 	@Override
@@ -231,8 +248,8 @@ public class ARVisionRenderer implements Renderer{
 		
 		colorProgram.useProgram();
 		colorProgram.setUniforms(finalMatrix[5], 0f, 0.40f, 0.20f, 0.3f);
-		puck.bindData(colorProgram);
-		puck.draw();
+		arrows[0].bindData(colorProgram);
+		arrows[0].draw();
 		
 		transparentProgram.useProgram();
 		transparentProgram.setUniforms(compassFinalMatrix, compassTexture);
@@ -279,7 +296,7 @@ public class ARVisionRenderer implements Renderer{
 			up_landscape[2] = -x;
 			normalize(up_landscape);
 			
-			setLookAtM(viewMatrix, 0, (float)dx + cameradx, (float)0 + camerady, (float)dz+cameradz, (float)(dx+x+cameradx), (float)(dy+y+camerady), (float)(dz+z+cameradz), a*up_portrait[0]+b*up_landscape[0],
+			setLookAtM(sensorViewMatrix, 0, (float)dx + cameradx, (float)0 + camerady, (float)dz+cameradz, (float)(dx+x+cameradx), (float)(dy+y+camerady), (float)(dz+z+cameradz), a*up_portrait[0]+b*up_landscape[0],
 					a*up_portrait[1]+b*up_landscape[1], a*up_portrait[2]+b*up_landscape[2]);
 			
 			if (-pitch > 0.1) {				
@@ -304,18 +321,18 @@ public class ARVisionRenderer implements Renderer{
 		}	
 		for (int i = 0; i < numObjects; i++) {
 			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0, translationMatrix[i], 0);
-			multiplyMM(modelViewMatrix[i], 0, viewMatrix, 0, modelMatrix[i], 0);
-			multiplyMM(finalMatrix[i], 0, projectionMatrix, 0, modelViewMatrix[i], 0);	
+			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0, modelMatrix[i], 0);
+			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0, modelViewMatrix[i], 0);	
 		}
 		multiplyMM(modelMatrix[5], 0,  translationMatrix[5], 0, rotationMatrix[5], 0);
-		multiplyMM(modelViewMatrix[5], 0, viewMatrix, 0, modelMatrix[5], 0);
-		multiplyMM(finalMatrix[5], 0, projectionMatrix, 0, modelViewMatrix[5], 0);	
+		multiplyMM(modelViewMatrix[5], 0, sensorViewMatrix, 0, modelMatrix[5], 0);
+		multiplyMM(finalMatrix[5], 0, sensorProjectionMatrix, 0, modelViewMatrix[5], 0);	
 		
 		setIdentityM(compassRotationMatrix, 0);
 		rotateM(compassRotationMatrix, 0, mAzimuth, 0f, 1f, 0f);
 		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0, compassRotationMatrix, 0);
 		multiplyMM(compassModelViewMatrix, 0, compassViewMatrix, 0, compassModelMatrix, 0);
-		multiplyMM(compassFinalMatrix, 0, projectionMatrix, 0, compassModelViewMatrix, 0);
+		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0, compassModelViewMatrix, 0);
 	}
 		
 	void normalize(float [] a) {
@@ -350,8 +367,8 @@ public class ARVisionRenderer implements Renderer{
     	rotateM(rotationMatrix[id+2], 0, (-angleX-90)%360, 0, 1, 0);
     	multiplyMM(modelMatrix[id+2], 0, rotationMatrix[id+2], 0, modelViewMatrix[id+2], 0);
     	translateM(modelMatrix[id+2], 0, -cameradx, -camerady, -cameradz);
-		multiplyMM(modelViewMatrix[id+2], 0, viewMatrix, 0, modelMatrix[id+2], 0);
-		multiplyMM(finalMatrix[id+2], 0, projectionMatrix, 0, modelViewMatrix[id+2], 0);	
+		multiplyMM(modelViewMatrix[id+2], 0, sensorViewMatrix, 0, modelMatrix[id+2], 0);
+		multiplyMM(finalMatrix[id+2], 0, sensorProjectionMatrix, 0, modelViewMatrix[id+2], 0);	
     	
     }
 

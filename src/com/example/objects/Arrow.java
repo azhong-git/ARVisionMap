@@ -11,10 +11,13 @@ import com.example.data.VertexArray;
 
 public class Arrow {
 	private static final int POSITION_COMPONENT = 3;
-	public final float radiusCone, heightCone, radiusCylinder, heightCylinder;
+	public float radiusCone, heightCone, radiusCylinder, heightCylinder;
 	
-	private final VertexArray vertexArray;
-	private final List<DrawCommand> drawList;
+	private VertexArray vertexArray;
+	private List<DrawCommand> drawList;
+	
+	public Arrow() {
+	}
 	
 	public Arrow(float radiusCone, float heightCone, float radiusCylinder, float heightCylinder, int numPoints) {
 		GeneratedData generatedData = ObjectBuilder.createArrow(new Cylinder(new Point(0f, 0f, 0f), radiusCylinder, heightCylinder), 
