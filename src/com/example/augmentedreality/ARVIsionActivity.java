@@ -70,8 +70,9 @@ GestureDetector.OnDoubleTapListener {
 	
 	// OpenCV objection detection
 	private static final Scalar RECT_COLOR = new Scalar (0, 0, 255, 100);
-	private static final Scalar FONT_COLOR = new Scalar (0, 0, 125, 100);
+	private static final Scalar FONT_COLOR = new Scalar (0, 76, 253, 50);
 	private static final Scalar MENU_COLOR = new Scalar (255, 0, 125, 100);
+	
 	private Mat mRgba;
 	private Mat mGray;
 	private File mCascadeFile;
@@ -80,8 +81,8 @@ GestureDetector.OnDoubleTapListener {
 	private static final String TAG = "ARVision::Activity";
     private float                  mRelativeFaceSize   = 0.5f;
     private int                    mAbsoluteFaceSize   = 0;
-    private int x1, x2, x3, midx;
-    private int y1, y2, y3, midy;
+    private int x1, x2, x3, midx, xx;
+    private int y1, y2, y3, midy, yy;
 	
 	// OpenGL layout
 	FrameLayout view;
@@ -282,6 +283,8 @@ GestureDetector.OnDoubleTapListener {
     public void onCameraViewStarted(int width, int height) {
         mGray = new Mat();
         mRgba = new Mat();
+        xx = 100;
+        yy = 50;
         x1 = 100;
         y1 = 50;
         x2 = 300;
@@ -306,12 +309,15 @@ GestureDetector.OnDoubleTapListener {
     		else
     			Core.putText(mRgba, "Move object", new Point(midx-x3, midy+y3), 0, 1.25, MENU_COLOR, 2);	
     	}
+    	// Used for detection
+    	/*
         if (mAbsoluteFaceSize == 0) {
             int height = mGray.rows();
             if (Math.round(height * mRelativeFaceSize) > 0) {
                 mAbsoluteFaceSize = Math.round(height * mRelativeFaceSize);
             }
         }
+        
         mNativeDetector.setMinFaceSize(mAbsoluteFaceSize);
         
         MatOfRect objects = new MatOfRect();
@@ -327,7 +333,9 @@ GestureDetector.OnDoubleTapListener {
             Core.rectangle(mRgba, objectsArray[i].tl(), objectsArray[i].br(), RECT_COLOR, 3);
             Core.putText(mRgba, "Surf bus here?", objectsArray[i].tl(), 0, 1.25, FONT_COLOR, 2);
         }
-        
+    	 */
+        if (ARVisionRenderer.GLStatus == ARVisionRenderer.GraphicsStatus.Loading)
+        	Core.putText(mRgba, "Loading...", new Point(midx-xx, midy), 0, 1.5, FONT_COLOR, 2);
         return mRgba;
     }
     

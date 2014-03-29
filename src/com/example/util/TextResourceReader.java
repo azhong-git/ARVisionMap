@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Scanner;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -35,4 +36,10 @@ public class TextResourceReader {
 		
 	}
 
+	public static int readNextInt(Scanner scan) {
+		while (!scan.hasNextInt()) {
+			scan.next();
+		}
+		return scan.nextInt();
+	}
 }

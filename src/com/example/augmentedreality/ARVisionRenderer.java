@@ -1,23 +1,24 @@
 package com.example.augmentedreality;
 
+import static android.opengl.GLES20.GL_BLEND;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
-
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_TEST;
 import static android.opengl.GLES20.GL_ONE;
-import static android.opengl.GLES20.GL_BLEND;
-import static android.opengl.GLES20.glEnable;
 import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
-import static android.opengl.GLES20.glDisable;
+import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
+import static android.opengl.GLES20.glEnable;
 import static android.opengl.GLES20.glViewport;
-import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.rotateM;
 import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.setLookAtM;
 import static android.opengl.Matrix.translateM;
+
+import java.util.InputMismatchException;
+import java.util.Scanner;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -27,156 +28,232 @@ import android.opengl.GLSurfaceView.Renderer;
 
 import com.example.objects.Arrow;
 import com.example.objects.Caption;
-import com.example.objects.Puck;
-import com.example.objects.Square;
 import com.example.objects.RawObject;
+import com.example.objects.Square;
 import com.example.openglbasics.R;
 import com.example.util.ColorShaderProgram;
 import com.example.util.MatrixHelper;
 import com.example.util.ObjectShaderProgram;
+import com.example.util.TextResourceReader;
 import com.example.util.TextureHelper;
 import com.example.util.TextureShaderProgram;
 import com.example.util.TransparentTextureShaderProgram;
 
-public class ARVisionRenderer implements Renderer{
-	
-	private final Context context;
-	//--------------------------- CONSTANTS ----------------------------------
-	private final int MAXNUM_TEXTURES = 10;
-	
-	//--------------------------- matrices init -------------------------------
-	// general project matrix and view matrix
-	private final float [] sensorProjectionMatrix = new float[16];
-	private final float [] sensorViewMatrix = new float [16];
-	
-	// model, view, final matrices for each object
-	private final float [][] modelMatrix = new float[MAXNUM_TEXTURES][];
-	private final float [][] modelViewMatrix = new float[MAXNUM_TEXTURES][];
-	private final float [][] finalMatrix = new float[MAXNUM_TEXTURES][];	
-	private final float [][] rotationMatrix = new float[MAXNUM_TEXTURES][];
-	private final float [][] translationMatrix = new float[MAXNUM_TEXTURES][];
-	
-	// separate matrices for compass (compass never moves out of screen)
-	private final float [] compassModelMatrix = new float [16];
-	private final float [] compassRotationMatrix = new float [16];
-	private final float [] compassTranslationMatrix = new float [16];
-	private final float [] compassViewMatrix = new float [16];
-	private final float [] compassModelViewMatrix = new float [16];
-	private final float [] compassFinalMatrix = new float [16];
-	
-	// helper matrices for setting up camera lookat
-	float [] forward = new float [3];
-	float [] up_portrait = new float [3];
-	float [] up_landscape = new float [3];
+public class ARVisionRenderer implements Renderer {
 
-	//---------------------------- parameters init ------------------------------------
+	private final Context context;
+
+	// ---------------------- Matrices used for transformations -----------------------
+	// general project matrix and view matrix
+	private float[] sensorProjectionMatrix;
+	private float[] sensorViewMatrix;
+
+	// model, view, final matrices for each object
+	private float[][] modelMatrix;
+	private float[][] modelViewMatrix;
+	private float[][] finalMatrix;
+	private float[][] rotationMatrix;
+	private float[][] translationMatrix;
+
+	// separate matrices for compass (compass never moves out of screen)
+	private float[] compassModelMatrix;
+	private float[] compassRotationMatrix;
+	private float[] compassTranslationMatrix;
+	private float[] compassViewMatrix;
+	private float[] compassModelViewMatrix;
+	private float[] compassFinalMatrix;
+
+	// helper matrices for setting up camera lookat
+	float[] forward;
+	float[] up_portrait;
+	float[] up_landscape;
+	//---------------------------------------------------------------------------------
+	// ---------------------------- Location parameters -------------------------------
 	// projection matrix parameters
 	private final float far = 10f;
 	private final float near = 0.2f;
-	
+
 	// distance on the z axis
-	private final float [] zdis = new float [MAXNUM_TEXTURES];
+	//private final float[] zdis = new float[MAXNUM_TEXTURES];
 
 	private final float ztranslate = 2.5f;
 	private final float busz = 1.0f;
 	private final float zpuck = 7f;
 	private final float zcompass = 1f;
-	
+
 	// camera location
 	private float cameradx = 0;
 	private float camerady = 0;
 	private float cameradz = 0;
-	
+
 	// other parameters
 	private float x = 0;
 	private float y = 0;
 	private float z = 0;
-
-	
+	//---------------------------------------------------------------------------------
+	//------------------------------- Status variables --------------------------------
 	private enum Mode {
 		MoveObject, MoveCamera;
 	}
-	
+
 	private Mode mode = Mode.MoveCamera;
+	
+	public enum GraphicsStatus {
+		Loading, Ready;
+	}
+	
+	public static GraphicsStatus GLStatus = GraphicsStatus.Loading;
+	//---------------------------------------------------------------------------------	
+	//------------------------------- Objects and textures ----------------------------
+	// number of captions (w/ texture)
+	private int numCaptions;
+	// number of raw objects (w/ texture)
+	private int numRawObjects;
+	// number of arrows (w/o texture)
+	private int numArrows;
+	
+	// number of objects (numCaptions + numRawObjects + numArrows)
+	private int numObjects;
+	// number of textures (numCaptions + numRawObjects)
+	private int numTextures;
 
-	//-------------------------------  Objects initialization -------------------------------
-	
-	// number of textures
-	private int numCaptionTextures = 2;
-	private int numRawObjectTextures = 3;
-	
-	// number of arrows (no texture)
-	private int numArrows = 1; 
-	
-	// number of objects (used for matrices)
-	private int numObjects = numCaptionTextures + numRawObjectTextures + numArrows;
-	
 	// objects with textures
-	private Caption [] caption = new Caption [numCaptionTextures];
-	private RawObject [] object = new RawObject [numRawObjectTextures];
-	private int [] textures = new int [numCaptionTextures + numRawObjectTextures];
-	private Square compass = new Square();
-	private int compassTexture;
+	private int [] textures;
+	private Caption[] caption;
+	private int [] captionTexture = {R.drawable.cory, R.drawable.soda};
 	
-	// object without texture
-	private Arrow [] arrows = new Arrow [numArrows];	
+	private RawObject[] object;
+	private int [] rawObjTextureMap = {R.drawable.surfobj, R.drawable.tableobj, R.drawable.chairobj};
+	private int [] rawObjTexture = {R.drawable.surf, R.drawable.table, R.drawable.chair};
+	
+	// compass object
+	private Square compass;
+	private int compassTexture;
 
-	// shader programs	
+	// object without texture
+	private Arrow[] arrow;
+	//---------------------------------------------------------------------------------
+	//------------------------------- Shader programs ---------------------------------
 	private TextureShaderProgram textureProgram;
 	private TransparentTextureShaderProgram transparentProgram;
 	private ColorShaderProgram colorProgram;
 	private ObjectShaderProgram objectProgram;
-
+	//---------------------------------------------------------------------------------
 	
 	public ARVisionRenderer(Context context) {
 		this.context = context;
+		String mapInput = TextResourceReader.readTextFileFromResource(context, R.raw.map);
+		Scanner scan = new Scanner(mapInput);
+		
+		// reading parameters from input map
+		numCaptions = TextResourceReader.readNextInt(scan);
+		numRawObjects = TextResourceReader.readNextInt(scan);
+		numArrows = TextResourceReader.readNextInt(scan);
+		numObjects = numCaptions + numRawObjects + numArrows;
+		numTextures = numCaptions + numRawObjects;
 	}
+
+	// initialize transformation matrices
+	private void initMatrices() {
+		// --------------------------- matrices init -------------------------------
+		// general project matrix and view matrix
+		sensorProjectionMatrix = new float[16];
+		sensorViewMatrix = new float[16];
+
+		// model, view, final matrices for each object
+		modelMatrix = new float[numObjects][];
+		modelViewMatrix = new float[numObjects][];
+		finalMatrix = new float[numObjects][];
+		rotationMatrix = new float[numObjects][];
+		translationMatrix = new float[numObjects][];
+		
+		for (int i = 0; i < numObjects; i++) {
+			modelMatrix[i] = new float[16];
+			modelViewMatrix[i] = new float[16];
+			finalMatrix[i] = new float[16];
+			rotationMatrix[i] = new float[16];
+			translationMatrix[i] = new float[16];
+		}
+
+		// separate matrices for compass (compass never moves out of screen)
+		compassModelMatrix = new float[16];
+		compassRotationMatrix = new float[16];
+		compassTranslationMatrix = new float[16];
+		compassViewMatrix = new float[16];
+		compassModelViewMatrix = new float[16];
+		compassFinalMatrix = new float[16];
+
+		// helper matrices for setting up camera lookat
+		forward = new float[3];
+		up_portrait = new float[3];
+		up_landscape = new float[3];
+	}
+	
+	// initialize objects including captions, raw objects and arrows
+	private void initObjects () {
+		// initialize captions
+		caption = new Caption[numCaptions];
+		int i = 0;
+		for (i = 0; i < numCaptions; i++) {
+			caption[i] = new Caption();
+		}
+
+		// initialize raw objects
+		object = new RawObject[numRawObjects];
+		for (i = 0; i < numRawObjects; i++) {
+			object[i] = new RawObject(context, rawObjTextureMap[i]);
+		}
+		
+		// initialize arrows
+		arrow = new Arrow[numArrows];
+		arrow[0] = new Arrow(1, 2, (float) 0.5, 1, 32);
+		
+		// initialize compass
+		compass = new Square();
+		
+		// bind textures
+		textures = new int[numTextures];
+
+	}
+	
 	
 	@Override
 	public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
-		mode = Mode.MoveCamera;
-		
-		for (int i = 0; i < numObjects; i++) {
-			modelMatrix[i] = new float [16];
-			modelViewMatrix[i] = new float [16];
-			finalMatrix[i] = new float[16];
-			
-			rotationMatrix[i] = new float [16];
-			translationMatrix[i] = new float [16];			
-		}
-		
-		for (int i = 0; i < numCaptionTextures; i++) {
-			caption[i] = new Caption();
-		}
-		
-		object[0] = new RawObject(context, R.drawable.surfobj);
-		object[1] = new RawObject(context, R.drawable.tableobj);
-		object[2] = new RawObject(context, R.drawable.chairobj);
-		
 		// set black background
 		glClearColor(0f, 0f, 0f, 0f);
-		
-		//block = new Block();
-		
+
+		// setting up programs
 		textureProgram = new TextureShaderProgram(context);
 		transparentProgram = new TransparentTextureShaderProgram(context);
 		colorProgram = new ColorShaderProgram(context);
 		objectProgram = new ObjectShaderProgram(context);
 		
-		textures[0] = TextureHelper.loadTexture(context, R.drawable.cory);	
-		textures[1] = TextureHelper.loadTexture(context, R.drawable.soda);	
-		textures[2] = TextureHelper.loadTexture(context, R.drawable.surf);
-		textures[3] = TextureHelper.loadTexture(context, R.drawable.table);
-		textures[4] = TextureHelper.loadTexture(context, R.drawable.chair);		
+		// initialize transformation matrices
+		initMatrices();
+		
+		// initialize objects
+		initObjects();
+		
+		// bind object texture
+		int i = 0;
+		for (; i < numCaptions; i++)
+			textures[i] = TextureHelper.loadTexture(context, captionTexture[i]);
+		for (; i < numTextures; i++) 
+			textures[i] = TextureHelper.loadTexture(context, rawObjTexture[i-numCaptions]);
+
+		// bind compass texture
 		compassTexture = TextureHelper.loadTexture(context, R.drawable.compass);
 		
-		arrows[0] = new Arrow(1, 2, (float)0.5 ,1 ,32); 
+		// objects successfully loaded
+		GLStatus = GraphicsStatus.Ready;
+				
 	}
-	
+
 	@Override
 	public void onSurfaceChanged(GL10 glUnused, int width, int height) {
-		glViewport( 0, 0, width, height );
-		MatrixHelper.perspectiveM(sensorProjectionMatrix, 45, (float) width / (float) height, near, far);
+		glViewport(0, 0, width, height);
+		MatrixHelper.perspectiveM(sensorProjectionMatrix, 45, (float) width
+				/ (float) height, near, far);
 		setLookAtM(sensorViewMatrix, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0);
 		setLookAtM(compassViewMatrix, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0);
 		for (int i = 0; i < numObjects; i++) {
@@ -185,9 +262,9 @@ public class ARVisionRenderer implements Renderer{
 			setIdentityM(rotationMatrix[i], 0);
 		}
 		setIdentityM(compassRotationMatrix, 0);
-		setIdentityM(compassTranslationMatrix,0);
+		setIdentityM(compassTranslationMatrix, 0);
 		translateM(compassTranslationMatrix, 0, 0f, 0f, -zcompass);
-		
+
 		translateM(translationMatrix[0], 0, 0f, 0f, -ztranslate);
 		translateM(translationMatrix[1], 0, 0f, 0f, -ztranslate);
 		translateM(translationMatrix[2], 0, 0f, -2f, -ztranslate);
@@ -195,25 +272,31 @@ public class ARVisionRenderer implements Renderer{
 		translateM(translationMatrix[4], 0, 0f, -2f, -ztranslate);
 		rotateM(translationMatrix[5], 0, 90, 0, 1, 0);
 		translateM(translationMatrix[5], 0, 0f, 0f, -zpuck);
-		
+
 		rotateM(rotationMatrix[0], 0, 0, 0, 1, 0);
 		rotateM(rotationMatrix[1], 0, 0, 0, 1, 0);
 		rotateM(rotationMatrix[2], 0, 90, 0, 1, 0);
 		rotateM(rotationMatrix[3], 0, 120, 0, 1, 0);
 		rotateM(rotationMatrix[4], 0, 45, 0, 1, 0);
 		rotateM(rotationMatrix[5], 0, -135, 1, 0, 0);
-		rotateM(rotationMatrix[5], 0,0, 0, 0, 1);
+		rotateM(rotationMatrix[5], 0, 0, 0, 0, 1);
 
 		for (int i = 0; i < numObjects; i++) {
-			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0, translationMatrix[i], 0);
-			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0, modelMatrix[i], 0);
-			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0, modelViewMatrix[i], 0);
+			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0,
+					translationMatrix[i], 0);
+			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0,
+					modelMatrix[i], 0);
+			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0,
+					modelViewMatrix[i], 0);
 		}
-		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0, compassRotationMatrix, 0);
-		multiplyMM(compassModelViewMatrix, 0, compassViewMatrix, 0, compassModelMatrix, 0);
-		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0, compassModelViewMatrix, 0);
+		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0,
+				compassRotationMatrix, 0);
+		multiplyMM(compassModelViewMatrix, 0, compassViewMatrix, 0,
+				compassModelMatrix, 0);
+		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0,
+				compassModelViewMatrix, 0);
 	}
-	
+
 	@Override
 	public void onDrawFrame(GL10 glUnused) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -221,36 +304,35 @@ public class ARVisionRenderer implements Renderer{
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-//		glDisable(GL_BLEND);
+		// glDisable(GL_BLEND);
 
-		
 		textureProgram.useProgram();
 		textureProgram.setUniforms(finalMatrix[0], textures[0]);
 		caption[0].bindData(textureProgram);
 		caption[0].draw();
-		
+
 		textureProgram.setUniforms(finalMatrix[1], textures[1]);
 		caption[1].bindData(textureProgram);
 		caption[1].draw();
-		
+
 		objectProgram.useProgram();
 		objectProgram.setUniforms(finalMatrix[2], textures[2]);
 		object[0].bindData(objectProgram);
 		object[0].draw();
-		
+
 		objectProgram.setUniforms(finalMatrix[3], textures[3]);
 		object[1].bindData(objectProgram);
 		object[1].draw();
-		
+
 		objectProgram.setUniforms(finalMatrix[4], textures[4]);
 		object[2].bindData(objectProgram);
 		object[2].draw();
-		
+
 		colorProgram.useProgram();
 		colorProgram.setUniforms(finalMatrix[5], 0f, 0.40f, 0.20f, 0.3f);
-		arrows[0].bindData(colorProgram);
-		arrows[0].draw();
-		
+		arrow[0].bindData(colorProgram);
+		arrow[0].draw();
+
 		transparentProgram.useProgram();
 		transparentProgram.setUniforms(compassFinalMatrix, compassTexture);
 		compass.bindData(transparentProgram);
@@ -258,14 +340,14 @@ public class ARVisionRenderer implements Renderer{
 
 	}
 
-	public void sensorUpdate(float mAzimuth, float roll, float pitch, double dx, double dy, double dz) {
+	public void sensorUpdate(float mAzimuth, float roll, float pitch,
+			double dx, double dy, double dz) {
 		if (mode == Mode.MoveObject) {
-			for (int i=0; i<numObjects; i++) {
+			for (int i = 0; i < numObjects; i++) {
 				rotateM(rotationMatrix[i], 0, mAzimuth, 0f, 1f, 0f);
 				rotateM(rotationMatrix[i], 0, pitch, 1f, 0f, 0f);
 			}
-		}
-		else if (mode == Mode.MoveCamera) {
+		} else if (mode == Mode.MoveCamera) {
 			x = (float) Math.cos(Math.toRadians(mAzimuth));
 			z = (float) Math.sin(Math.toRadians(mAzimuth));
 			y = (float) Math.tan(Math.toRadians(-pitch));
@@ -273,103 +355,119 @@ public class ARVisionRenderer implements Renderer{
 			forward[1] = z;
 			forward[2] = y;
 			normalize(forward);
-			float a = (float) Math.cos(Math.toRadians(-roll-90));
-			float b = (float) Math.sin(Math.toRadians(-roll-90));
-			if (-pitch > 0.1) {				
-				 up_portrait[0] = -x;
-				 up_portrait[1] = 1.0f/y;
-				 up_portrait[2] = -z*a;
-			}
-			else if (-pitch < 0.1) {
+			float a = (float) Math.cos(Math.toRadians(-roll - 90));
+			float b = (float) Math.sin(Math.toRadians(-roll - 90));
+			if (-pitch > 0.1) {
+				up_portrait[0] = -x;
+				up_portrait[1] = 1.0f / y;
+				up_portrait[2] = -z * a;
+			} else if (-pitch < 0.1) {
 				up_portrait[0] = x;
-				up_portrait[1] = -1.0f/y;
-				up_portrait[2] = z*a;			
-			}			
-			else {
+				up_portrait[1] = -1.0f / y;
+				up_portrait[2] = z * a;
+			} else {
 				up_portrait[0] = 0;
 				up_portrait[1] = 1.0f;
-				up_portrait[2] = 0;			
+				up_portrait[2] = 0;
 			}
 			normalize(up_portrait);
 			up_landscape[0] = z;
 			up_landscape[1] = 0;
 			up_landscape[2] = -x;
 			normalize(up_landscape);
-			
-			setLookAtM(sensorViewMatrix, 0, (float)dx + cameradx, (float)0 + camerady, (float)dz+cameradz, (float)(dx+x+cameradx), (float)(dy+y+camerady), (float)(dz+z+cameradz), a*up_portrait[0]+b*up_landscape[0],
-					a*up_portrait[1]+b*up_landscape[1], a*up_portrait[2]+b*up_landscape[2]);
-			
-			if (-pitch > 0.1) {				
-				 up_portrait[0] = 0;
-				 up_portrait[1] = 1.0f/y;
-				 up_portrait[2] = a;
-			}
-			else if (-pitch < 0.1) {
+
+			setLookAtM(sensorViewMatrix, 0, (float) dx + cameradx, (float) 0
+					+ camerady, (float) dz + cameradz,
+					(float) (dx + x + cameradx), (float) (dy + y + camerady),
+					(float) (dz + z + cameradz), a * up_portrait[0] + b
+							* up_landscape[0], a * up_portrait[1] + b
+							* up_landscape[1], a * up_portrait[2] + b
+							* up_landscape[2]);
+
+			if (-pitch > 0.1) {
 				up_portrait[0] = 0;
-				up_portrait[1] = -1.0f/y;
-				up_portrait[2] = -a;			
-			}			
-			else {
+				up_portrait[1] = 1.0f / y;
+				up_portrait[2] = a;
+			} else if (-pitch < 0.1) {
+				up_portrait[0] = 0;
+				up_portrait[1] = -1.0f / y;
+				up_portrait[2] = -a;
+			} else {
 				up_portrait[0] = 0;
 				up_portrait[1] = 1.0f;
-				up_portrait[2] = 0;			
+				up_portrait[2] = 0;
 			}
 			normalize(up_portrait);
-			setLookAtM(compassViewMatrix, 0, 0f, 0f, 0f, 0f, y, -1f,   a*up_portrait[0]-b,
-					a*up_portrait[1], a*up_portrait[2]);
-			
-		}	
-		for (int i = 0; i < numObjects; i++) {
-			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0, translationMatrix[i], 0);
-			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0, modelMatrix[i], 0);
-			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0, modelViewMatrix[i], 0);	
+			setLookAtM(compassViewMatrix, 0, 0f, 0f, 0f, 0f, y, -1f, a
+					* up_portrait[0] - b, a * up_portrait[1], a
+					* up_portrait[2]);
+
 		}
-		multiplyMM(modelMatrix[5], 0,  translationMatrix[5], 0, rotationMatrix[5], 0);
-		multiplyMM(modelViewMatrix[5], 0, sensorViewMatrix, 0, modelMatrix[5], 0);
-		multiplyMM(finalMatrix[5], 0, sensorProjectionMatrix, 0, modelViewMatrix[5], 0);	
-		
+		for (int i = 0; i < numObjects; i++) {
+			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0,
+					translationMatrix[i], 0);
+			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0,
+					modelMatrix[i], 0);
+			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0,
+					modelViewMatrix[i], 0);
+		}
+		multiplyMM(modelMatrix[5], 0, translationMatrix[5], 0,
+				rotationMatrix[5], 0);
+		multiplyMM(modelViewMatrix[5], 0, sensorViewMatrix, 0, modelMatrix[5],
+				0);
+		multiplyMM(finalMatrix[5], 0, sensorProjectionMatrix, 0,
+				modelViewMatrix[5], 0);
+
 		setIdentityM(compassRotationMatrix, 0);
 		rotateM(compassRotationMatrix, 0, mAzimuth, 0f, 1f, 0f);
-		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0, compassRotationMatrix, 0);
-		multiplyMM(compassModelViewMatrix, 0, compassViewMatrix, 0, compassModelMatrix, 0);
-		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0, compassModelViewMatrix, 0);
+		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0,
+				compassRotationMatrix, 0);
+		multiplyMM(compassModelViewMatrix, 0, compassViewMatrix, 0,
+				compassModelMatrix, 0);
+		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0,
+				compassModelViewMatrix, 0);
 	}
-		
-	void normalize(float [] a) {
+
+	void normalize(float[] a) {
 		double sum = 0;
 		for (int i = 0; i < a.length; i++) {
-			sum+=a[i]*a[i];
+			sum += a[i] * a[i];
 		}
 		sum = Math.sqrt(sum);
 		for (int i = 0; i < a.length; i++) {
-			a[i]=(float) (a[i]/sum);
+			a[i] = (float) (a[i] / sum);
 		}
-		
+
 	}
-	
+
 	public void moveCamera(float dx, float dy) {
-		cameradx = cameradx - forward[0]*dy - up_landscape[0]*dx;
-		camerady = camerady - forward[1]*dy - up_landscape[1]*dx;
-		cameradz = cameradz - forward[2]*dy - up_landscape[2]*dx;
+		cameradx = cameradx - forward[0] * dy - up_landscape[0] * dx;
+		camerady = camerady - forward[1] * dy - up_landscape[1] * dx;
+		cameradz = cameradz - forward[2] * dy - up_landscape[2] * dx;
 	}
-	
-    public void moveObject(float forward, float right) {
-    }
-    
-    public void setObject(int id, float angleX, float angleY, float angleZ) {
-		setIdentityM(translationMatrix[id+2], 0);
-		setIdentityM(rotationMatrix[id+2], 0);
-    	translateM(translationMatrix[id+2], 0, 0, (float) (busz*Math.tan(Math.toRadians(angleY))), -busz);
-    	rotateM(rotationMatrix[id+2], 0, 270, 1, 1, 0);
-    	multiplyMM(modelViewMatrix[id+2], 0, translationMatrix[id+2], 0, rotationMatrix[id+2], 0);
-    	
-    	setIdentityM(rotationMatrix[id+2], 0);
-    	rotateM(rotationMatrix[id+2], 0, (-angleX-90)%360, 0, 1, 0);
-    	multiplyMM(modelMatrix[id+2], 0, rotationMatrix[id+2], 0, modelViewMatrix[id+2], 0);
-    	translateM(modelMatrix[id+2], 0, -cameradx, -camerady, -cameradz);
-		multiplyMM(modelViewMatrix[id+2], 0, sensorViewMatrix, 0, modelMatrix[id+2], 0);
-		multiplyMM(finalMatrix[id+2], 0, sensorProjectionMatrix, 0, modelViewMatrix[id+2], 0);	
-    	
-    }
+
+	public void moveObject(float forward, float right) {
+	}
+
+	public void setObject(int id, float angleX, float angleY, float angleZ) {
+		setIdentityM(translationMatrix[id + 2], 0);
+		setIdentityM(rotationMatrix[id + 2], 0);
+		translateM(translationMatrix[id + 2], 0, 0,
+				(float) (busz * Math.tan(Math.toRadians(angleY))), -busz);
+		rotateM(rotationMatrix[id + 2], 0, 270, 1, 1, 0);
+		multiplyMM(modelViewMatrix[id + 2], 0, translationMatrix[id + 2], 0,
+				rotationMatrix[id + 2], 0);
+
+		setIdentityM(rotationMatrix[id + 2], 0);
+		rotateM(rotationMatrix[id + 2], 0, (-angleX - 90) % 360, 0, 1, 0);
+		multiplyMM(modelMatrix[id + 2], 0, rotationMatrix[id + 2], 0,
+				modelViewMatrix[id + 2], 0);
+		translateM(modelMatrix[id + 2], 0, -cameradx, -camerady, -cameradz);
+		multiplyMM(modelViewMatrix[id + 2], 0, sensorViewMatrix, 0,
+				modelMatrix[id + 2], 0);
+		multiplyMM(finalMatrix[id + 2], 0, sensorProjectionMatrix, 0,
+				modelViewMatrix[id + 2], 0);
+
+	}
 
 }

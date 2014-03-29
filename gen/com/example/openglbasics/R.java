@@ -78,16 +78,17 @@ containing a value of this type.
     public static final class raw {
         public static final int fragment_shader=0x7f040000;
         public static final int lbpcascade_frontalface=0x7f040001;
-        public static final int object_fragment_shader=0x7f040002;
-        public static final int object_vertex_shader=0x7f040003;
-        public static final int simple_fragment_shader=0x7f040004;
-        public static final int simple_vertex_shader=0x7f040005;
-        public static final int surf10_80_40=0x7f040006;
-        public static final int surf12_80_40_former=0x7f040007;
-        public static final int texture_fragment_shader=0x7f040008;
-        public static final int texture_vertex_shader=0x7f040009;
-        public static final int transparent_texture_fragment_shader=0x7f04000a;
-        public static final int vertex_shader=0x7f04000b;
+        public static final int map=0x7f040002;
+        public static final int object_fragment_shader=0x7f040003;
+        public static final int object_vertex_shader=0x7f040004;
+        public static final int simple_fragment_shader=0x7f040005;
+        public static final int simple_vertex_shader=0x7f040006;
+        public static final int surf10_80_40=0x7f040007;
+        public static final int surf12_80_40_former=0x7f040008;
+        public static final int texture_fragment_shader=0x7f040009;
+        public static final int texture_vertex_shader=0x7f04000a;
+        public static final int transparent_texture_fragment_shader=0x7f04000b;
+        public static final int vertex_shader=0x7f04000c;
     }
     public static final class string {
         public static final int action_settings=0x7f070001;
