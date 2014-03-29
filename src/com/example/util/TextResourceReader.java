@@ -21,8 +21,10 @@ public class TextResourceReader {
 			
 			String nextLine;
 			while ((nextLine = bufferedReader.readLine()) != null) {
-				body.append(nextLine);
-				body.append('\n');
+				if (!nextLine.matches("\\s*//.*")) {
+					body.append(nextLine);
+					body.append('\n');
+				}
 			}
 		}
 		catch (IOException e) {
@@ -41,5 +43,12 @@ public class TextResourceReader {
 			scan.next();
 		}
 		return scan.nextInt();
+	}
+	
+	public static float readNextFloat(Scanner scan) {
+		while (!scan.hasNextFloat()) {
+			scan.next();
+		}
+		return scan.nextFloat();
 	}
 }

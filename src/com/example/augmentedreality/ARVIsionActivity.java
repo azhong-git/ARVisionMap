@@ -70,7 +70,7 @@ GestureDetector.OnDoubleTapListener {
 	
 	// OpenCV objection detection
 	private static final Scalar RECT_COLOR = new Scalar (0, 0, 255, 100);
-	private static final Scalar FONT_COLOR = new Scalar (0, 76, 253, 50);
+	private static final Scalar FONT_COLOR = new Scalar (0, 76, 253, 10);
 	private static final Scalar MENU_COLOR = new Scalar (255, 0, 125, 100);
 	
 	private Mat mRgba;

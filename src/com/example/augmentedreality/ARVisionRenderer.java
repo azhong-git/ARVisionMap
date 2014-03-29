@@ -75,6 +75,11 @@ public class ARVisionRenderer implements Renderer {
 
 	// distance on the z axis
 	//private final float[] zdis = new float[MAXNUM_TEXTURES];
+	
+	private int [] objectType;
+	private int [] objectTexture;
+	private float [][] objLoc;
+	private float [][] objRot;
 
 	private final float ztranslate = 2.5f;
 	private final float busz = 1.0f;
@@ -151,6 +156,24 @@ public class ARVisionRenderer implements Renderer {
 		numArrows = TextResourceReader.readNextInt(scan);
 		numObjects = numCaptions + numRawObjects + numArrows;
 		numTextures = numCaptions + numRawObjects;
+		
+		// initialize transformation matrices
+		initMatrices();
+
+		
+		objectType = new int [numObjects];
+		objectTexture = new int [numObjects];
+		objLoc = new float [numObjects][3];
+		objRot = new float [numObjects][3];
+		
+		for (int i = 0; i < numTextures; i++) {
+			objectType[i] = TextResourceReader.readNextInt(scan);
+			objectTexture[i] = TextResourceReader.readNextInt(scan);
+			for (int j = 0; j < 3; j++)
+				objLoc[i][j] = TextResourceReader.readNextFloat(scan);
+			for (int j = 0; j < 3; j++)
+				objRot[i][j] = TextResourceReader.readNextFloat(scan);
+		}				
 	}
 
 	// initialize transformation matrices
@@ -161,19 +184,11 @@ public class ARVisionRenderer implements Renderer {
 		sensorViewMatrix = new float[16];
 
 		// model, view, final matrices for each object
-		modelMatrix = new float[numObjects][];
-		modelViewMatrix = new float[numObjects][];
-		finalMatrix = new float[numObjects][];
-		rotationMatrix = new float[numObjects][];
-		translationMatrix = new float[numObjects][];
-		
-		for (int i = 0; i < numObjects; i++) {
-			modelMatrix[i] = new float[16];
-			modelViewMatrix[i] = new float[16];
-			finalMatrix[i] = new float[16];
-			rotationMatrix[i] = new float[16];
-			translationMatrix[i] = new float[16];
-		}
+		modelMatrix = new float[numObjects][16];
+		modelViewMatrix = new float[numObjects][16];
+		finalMatrix = new float[numObjects][16];
+		rotationMatrix = new float[numObjects][16];
+		translationMatrix = new float[numObjects][16];
 
 		// separate matrices for compass (compass never moves out of screen)
 		compassModelMatrix = new float[16];
@@ -201,7 +216,7 @@ public class ARVisionRenderer implements Renderer {
 		// initialize raw objects
 		object = new RawObject[numRawObjects];
 		for (i = 0; i < numRawObjects; i++) {
-			object[i] = new RawObject(context, rawObjTextureMap[i]);
+			object[i] = new RawObject(context, rawObjTextureMap[objectTexture[i+numCaptions]]);
 		}
 		
 		// initialize arrows
@@ -228,18 +243,15 @@ public class ARVisionRenderer implements Renderer {
 		colorProgram = new ColorShaderProgram(context);
 		objectProgram = new ObjectShaderProgram(context);
 		
-		// initialize transformation matrices
-		initMatrices();
-		
 		// initialize objects
 		initObjects();
 		
 		// bind object texture
 		int i = 0;
 		for (; i < numCaptions; i++)
-			textures[i] = TextureHelper.loadTexture(context, captionTexture[i]);
+			textures[i] = TextureHelper.loadTexture(context, captionTexture[objectTexture[i]]);
 		for (; i < numTextures; i++) 
-			textures[i] = TextureHelper.loadTexture(context, rawObjTexture[i-numCaptions]);
+			textures[i] = TextureHelper.loadTexture(context, rawObjTexture[objectTexture[i]]);
 
 		// bind compass texture
 		compassTexture = TextureHelper.loadTexture(context, R.drawable.compass);
@@ -265,23 +277,9 @@ public class ARVisionRenderer implements Renderer {
 		setIdentityM(compassTranslationMatrix, 0);
 		translateM(compassTranslationMatrix, 0, 0f, 0f, -zcompass);
 
-		translateM(translationMatrix[0], 0, 0f, 0f, -ztranslate);
-		translateM(translationMatrix[1], 0, 0f, 0f, -ztranslate);
-		translateM(translationMatrix[2], 0, 0f, -2f, -ztranslate);
-		translateM(translationMatrix[3], 0, 0f, 0f, -4);
-		translateM(translationMatrix[4], 0, 0f, -2f, -ztranslate);
-		rotateM(translationMatrix[5], 0, 90, 0, 1, 0);
-		translateM(translationMatrix[5], 0, 0f, 0f, -zpuck);
-
-		rotateM(rotationMatrix[0], 0, 0, 0, 1, 0);
-		rotateM(rotationMatrix[1], 0, 0, 0, 1, 0);
-		rotateM(rotationMatrix[2], 0, 90, 0, 1, 0);
-		rotateM(rotationMatrix[3], 0, 120, 0, 1, 0);
-		rotateM(rotationMatrix[4], 0, 45, 0, 1, 0);
-		rotateM(rotationMatrix[5], 0, -135, 1, 0, 0);
-		rotateM(rotationMatrix[5], 0, 0, 0, 0, 1);
-
-		for (int i = 0; i < numObjects; i++) {
+		for (int i = 0; i < numTextures; i++) {
+			translateM(translationMatrix[i], 0, objLoc[i][0], objLoc[i][1], objLoc[i][2]);
+			rotateM(rotationMatrix[i], 0, objRot[i][1], 0, 1, 0);
 			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0,
 					translationMatrix[i], 0);
 			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0,
@@ -289,6 +287,18 @@ public class ARVisionRenderer implements Renderer {
 			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0,
 					modelViewMatrix[i], 0);
 		}
+		
+		for (int i = 0; i < numObjects; i++) {
+
+		}
+		
+		rotateM(translationMatrix[5], 0, 90, 0, 1, 0);
+		translateM(translationMatrix[5], 0, 0f, 0f, -zpuck);
+		rotateM(rotationMatrix[5], 0, -135, 1, 0, 0);
+		rotateM(rotationMatrix[5], 0, 0, 0, 0, 1);
+
+		
+
 		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0,
 				compassRotationMatrix, 0);
 		multiplyMM(compassModelViewMatrix, 0, compassViewMatrix, 0,
@@ -305,7 +315,6 @@ public class ARVisionRenderer implements Renderer {
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 		// glDisable(GL_BLEND);
-
 		textureProgram.useProgram();
 		textureProgram.setUniforms(finalMatrix[0], textures[0]);
 		caption[0].bindData(textureProgram);
