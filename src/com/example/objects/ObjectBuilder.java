@@ -51,15 +51,14 @@ public class ObjectBuilder {
 		vertexData[offset++] = circle.center.x;
 		vertexData[offset++] = circle.center.y;
 		vertexData[offset++] = circle.center.z;
-		vertexData[offset++] = 1;
+		vertexData[offset++] = 1f;
 		
 		for (int i =0; i <= numPoints; i++) {
 			float angleInRadians = ((float) i / (float) numPoints) * (float) Math.PI * 2f; 
-			
 			vertexData[offset++] = (float) (circle.center.x + circle.radius*Math.cos(angleInRadians));
 			vertexData[offset++] = circle.center.y;
 			vertexData[offset++] = (float) (circle.center.z+circle.radius*Math.sin(angleInRadians));
-			vertexData[offset++] = 1;
+			vertexData[offset++] = 1f;
 		}
 		
 		drawList.add(new DrawCommand() {
@@ -138,9 +137,11 @@ public class ObjectBuilder {
 	}
 	
 	static GeneratedData createArrow(Cylinder puck, Cone top, int numPoints) {
-		int size = (sizeOfCircleInVertices(numPoints) + sizeOfOpenCylinderInVertices(numPoints));
+		int size = (2*sizeOfCircleInVertices(numPoints) + sizeOfOpenCylinderInVertices(numPoints));
 		//int size= sizeOfCircleInVertices(numPoints);
 		ObjectBuilder builder = new ObjectBuilder(size);
+		Circle bottom = new Circle (puck.center.translateY(-puck.height/2f), puck.radius);
+		builder.appendCircle(bottom, numPoints);
 		builder.appendCone(top, numPoints);
 		builder.appendOpenCylinder(puck, numPoints);
 		return builder.build();
