@@ -1,0 +1,32 @@
+// augmented map input 
+// --------------------------------------------
+// object count
+// format: 
+// count of caption, raw objects, arrows in order
+// ---------------------------------------------
+3 3 4
+// ---------------------------------------------
+// object details
+// ---------------------------------------------
+// object type: 0-caption, 1-raw object, 2-arrow
+// texture#: texture number within each type 
+// object location: x, y, z
+// object rotation: rx, ry, rz
+// ---------------------------------------------
+// texture table:
+// object type	| tex#	0	1	2
+// 0 (caption)	  	cory	soda 
+// 1 (raw)		surf	table	chair
+// 2 (arrow)		NA	NA	NA
+// ---------------------------------------------
+// Format:
+// type	texture		x	y	z	rx	ry	rz 
+   0 	1 		0 	2  	-2.5	0	0	0
+   0 	0 		0 	0  	-2.5 	0 	0   	0
+   0 	1 		0 	0  	2.5 	0 	0   	0
+   1 	2 		0 	-2 	-2.5 	0 	90  	0
+   1 	1 		0 	0  	-4 	0 	120  	0
+   1 	2 		0 	-2 	-2.5 	0 	45  	0
+   2	NA		0	0 	-7	-135	90	0		   2	NA		0	0 	-7	-50	120	0
+   2	NA		2	8 	-7	0	150	0	
+   2	NA		0	-2 	-5	0	150	0	
