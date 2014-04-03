@@ -2,7 +2,6 @@ package com.example.objects;
 
 import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.glDrawArrays;
-import static android.opengl.GLES20.glUniform4f;
 
 import com.example.data.VertexArray;
 import com.example.util.SimpleShaderProgram;

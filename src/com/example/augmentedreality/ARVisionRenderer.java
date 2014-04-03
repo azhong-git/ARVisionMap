@@ -17,7 +17,6 @@ import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.setLookAtM;
 import static android.opengl.Matrix.translateM;
 
-import java.util.InputMismatchException;
 import java.util.Scanner;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -81,9 +80,7 @@ public class ARVisionRenderer implements Renderer {
 	private float [][] objLoc;
 	private float [][] objRot;
 
-	private final float ztranslate = 2.5f;
 	private final float busz = 1.0f;
-	private final float zpuck = 7f;
 	private final float zcompass = 1f;
 
 	// camera location
