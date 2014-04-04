@@ -5,11 +5,18 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
+    <ExpandableListView
+        android:id="@+id/expandableListView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </ExpandableListView>
+
     <FrameLayout
         android:id="@+id/camera_preview"
         android:layout_width="fill_parent"
         android:layout_height="0dip"
         android:layout_weight="0.59">
+
     </FrameLayout>
     
             
@@ -26,6 +33,5 @@
         android:layout_height="16dp" >
 
     </FrameLayout>
-
 
 </LinearLayout>

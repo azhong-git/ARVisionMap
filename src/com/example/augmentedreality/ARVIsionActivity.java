@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -48,16 +51,22 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ExpandableListView;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 
 import com.example.detection.DetectionBasedTracker;
 import com.example.openglbasics.R;
 
 public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, LocationListener, GestureDetector.OnGestureListener,
 GestureDetector.OnDoubleTapListener {
+	// Expandable list view for menu	
+	ExpandableListAdapter listAdapter;
+	ExpandableListView menuview;
+    List<String> listDataHeader;
+    HashMap<String, List<String>> listDataChild;
+	
 	// OpenGL content view
 	private GLSurfaceView glSurfaceView;
 	private boolean rendererSet = false;
@@ -83,7 +92,7 @@ GestureDetector.OnDoubleTapListener {
     private int                    mAbsoluteFaceSize   = 0;
     private int x1, x2, x3, midx, xx;
     private int y1, y2, y3, midy, yy;
-	
+    
 	// OpenGL layout
 	FrameLayout view;
 	// sensor layout
@@ -196,7 +205,19 @@ GestureDetector.OnDoubleTapListener {
 
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         topview = (FrameLayout) findViewById(R.id.topview);
-        locationview = (FrameLayout) findViewById(R.id.locationview);
+        locationview = (FrameLayout) findViewById(R.id.locationview);        
+ 
+        
+        
+        // get the listview
+        menuview = (ExpandableListView) findViewById(R.id.expandableListView);
+        // preparing list data
+        prepareListData();
+        listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild); 
+        // setting list adapter
+        menuview.setAdapter(listAdapter);
+
+        
         
         initCamera();
 
@@ -653,5 +674,20 @@ GestureDetector.OnDoubleTapListener {
 	        return true;
 	    }
 
-    
+	    private void prepareListData() {
+	        listDataHeader = new ArrayList<String>();
+	        listDataChild = new HashMap<String, List<String>>();
+	 
+	        // Adding child data
+	        listDataHeader.add("Mode Selection");
+	 
+	        // Adding child data
+	        List<String> modegroup = new ArrayList<String>();
+	        modegroup.add("Visitor");
+	        modegroup.add("Apprentice");
+	        modegroup.add("Navigation");
+	        modegroup.add("Calendar");
+	 
+	        listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
+	    }
 }
