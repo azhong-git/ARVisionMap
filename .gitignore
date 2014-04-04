@@ -1,1 +1,7 @@
 bin/*
+jni/*
+obj/*
+*.o
+*.so
+*.o.d
+project.properties
