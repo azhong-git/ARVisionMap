@@ -1,62 +1,59 @@
 package com.example.augmentedreality;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
-import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.objdetect.CascadeClassifier;
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.PixelFormat;
-import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.Criteria;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v4.view.GestureDetectorCompat;
-import android.support.v4.view.MotionEventCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.Surface;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
 import com.example.detection.DetectionBasedTracker;
 import com.example.openglbasics.R;
 
-public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, LocationListener, GestureDetector.OnGestureListener,
+public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, GestureDetector.OnGestureListener,
 GestureDetector.OnDoubleTapListener {
 	// OpenGL content view
 	private GLSurfaceView glSurfaceView;
@@ -69,20 +66,15 @@ GestureDetector.OnDoubleTapListener {
 	private int mCameraIndex = 0;
 	
 	// OpenCV objection detection
-	private static final Scalar RECT_COLOR = new Scalar (0, 0, 255, 100);
 	private static final Scalar FONT_COLOR = new Scalar (0, 76, 253, 10);
 	private static final Scalar MENU_COLOR = new Scalar (255, 0, 125, 100);
 	
 	private Mat mRgba;
 	private Mat mGray;
 	private File mCascadeFile;
-	//private CascadeClassifier mDetector;
-	private DetectionBasedTracker mNativeDetector;
 	private static final String TAG = "ARVision::Activity";
-    private float                  mRelativeFaceSize   = 0.5f;
-    private int                    mAbsoluteFaceSize   = 0;
-    private int x1, x2, x3, midx, xx;
-    private int y1, y2, y3, midy, yy;
+    private int x3, midx, xx;
+    private int y3, midy;
 	
 	// OpenGL layout
 	FrameLayout view;
@@ -123,23 +115,20 @@ GestureDetector.OnDoubleTapListener {
     public static float[] mRotationM = new float[16];
     public static float[] mRemapedRotationM = new float[16];
     public static boolean sensorAvailable = false;
+    public Timer timer;
+    
     private boolean mFailed;
     
 	private final float ALPHA = 0.15f;
-
-	private LocationManager locationManager;
-	private String provider;
-	private boolean locationMechanismSet = false;
 	
 	// home center
-	double lat ;//= 37.875133;
-	double lon ;//= -122.2595580;
-	double dx;
-	double dy;
-	double dz;
-	private int counter = 0;
-	private boolean locationCali = false;
-
+	double lat = 0.0;//= 37.875133;
+	double lon = 0.0;//= -122.2595580;
+	double dx = 0.0;
+	double dy = 0.0;
+	double dz = 0.0;
+	boolean fetchLocationFirstAttempt = true;
+	
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -161,7 +150,7 @@ GestureDetector.OnDoubleTapListener {
                 		is.close();
                 		os.close();
                 	 
-                		mNativeDetector = new DetectionBasedTracker(mCascadeFile.getAbsolutePath(), 0);
+                		new DetectionBasedTracker(mCascadeFile.getAbsolutePath(), 0);
                 		cascadeDir.delete();
                 	}
                 	catch (IOException e){
@@ -206,29 +195,6 @@ GestureDetector.OnDoubleTapListener {
 
         mLocationData = new TextView(this);
         locationview.addView(mLocationData);
-        
-        // Get the location manager
-        try {
-	        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-	        locationMechanismSet = true;
-        } catch (Exception e) {
-        	System.out.println("Location service could not be initialized: " + e);
-        }
-	        
-        if (locationMechanismSet) {
-	        Criteria criteria = new Criteria();        
-		    provider = locationManager.getBestProvider(criteria, false);
-		    Location location = locationManager.getLastKnownLocation(provider);
-
-	        if (location != null) {
-	          System.out.println("Provider " + provider + " has been selected.");
-			  lon = location.getLongitude();
-			  lat = location.getLatitude();
-	          onLocationChanged(location);
-	        } else {
-	        	mLocationData.setText("Location not available.");
-	        }
-        }
 
         // Initiate the Sensor Manager and register this as Listener for the required sensor types:
 		// TODO: Find how to get a SensorManager outside an Activity, to implement as a utility class.
@@ -240,7 +206,6 @@ GestureDetector.OnDoubleTapListener {
         		mSensMan.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
                 SensorManager.SENSOR_DELAY_GAME); // TODO to change it to SENSOR_DELAY_NORMAL
 
-        
         initGl();  // initialize OpenGL view
     }
 
@@ -253,8 +218,6 @@ GestureDetector.OnDoubleTapListener {
         if (mCameraView != null)
             mCameraView.disableView();
     	
-    	if (locationMechanismSet)
-    		locationManager.removeUpdates(this);
     }
 
     @Override
@@ -264,9 +227,6 @@ GestureDetector.OnDoubleTapListener {
     		glSurfaceView.onResume();
     	}
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
-        
-    	if (locationMechanismSet)
-    		locationManager.requestLocationUpdates(provider, 0, 0, this);
     }
     
     public void onDestroy() {
@@ -284,11 +244,6 @@ GestureDetector.OnDoubleTapListener {
         mGray = new Mat();
         mRgba = new Mat();
         xx = 100;
-        yy = 50;
-        x1 = 100;
-        y1 = 50;
-        x2 = 300;
-        y2 = 150;
         x3 = 400;
         y3 = 240;
         midx = 400;
@@ -309,31 +264,7 @@ GestureDetector.OnDoubleTapListener {
     		else
     			Core.putText(mRgba, "Move object", new Point(midx-x3, midy+y3), 0, 1.25, MENU_COLOR, 2);	
     	}
-    	// Used for detection
-    	/*
-        if (mAbsoluteFaceSize == 0) {
-            int height = mGray.rows();
-            if (Math.round(height * mRelativeFaceSize) > 0) {
-                mAbsoluteFaceSize = Math.round(height * mRelativeFaceSize);
-            }
-        }
-        
-        mNativeDetector.setMinFaceSize(mAbsoluteFaceSize);
-        
-        MatOfRect objects = new MatOfRect();
-
-        if (mNativeDetector != null) {
-        	mNativeDetector.detect(mGray, objects);
-        }
-        else {
-        	Log.e(TAG, "Detection method is not available!");
-        }
-        Rect [] objectsArray = objects.toArray();
-        for (int i = 0; i < objectsArray.length; i++) {
-            Core.rectangle(mRgba, objectsArray[i].tl(), objectsArray[i].br(), RECT_COLOR, 3);
-            Core.putText(mRgba, "Surf bus here?", objectsArray[i].tl(), 0, 1.25, FONT_COLOR, 2);
-        }
-    	 */
+    	
         if (ARVisionRenderer.GLStatus == ARVisionRenderer.GraphicsStatus.Loading)
         	Core.putText(mRgba, "Loading...", new Point(midx-xx, midy), 0, 1.5, FONT_COLOR, 2);
         return mRgba;
@@ -350,14 +281,6 @@ GestureDetector.OnDoubleTapListener {
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
         	case Sensor.TYPE_ACCELEROMETER:
-                /*
-                 * NOTE: The data must be copied off the event.values
-                 * as the system is reusing that array in all SensorEvents.
-                 * Simply assigning:
-                 * mGravs = event.values won't work.
-                 *
-                 * I use a member array in an attempt to reduce garbage production.
-                 */
         		mGravs = lowPass(event.values.clone(), mGravs);
                 break;
         	case Sensor.TYPE_MAGNETIC_FIELD:
@@ -367,9 +290,7 @@ GestureDetector.OnDoubleTapListener {
         }
 
         if (SensorManager.getRotationMatrix(mRotationM, null, mGravs,mGeoMags)){
-//                Rotate to the camera's line of view (Y axis along the camera's axis)
-//                TODO: Find how to use android.opengl.Matrix to rotate to an arbitrary coordinate system.
-        		Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        		//Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         		//final int rotation = display.getRotation();
         		{
         			SensorManager.remapCoordinateSystem(mRotationM, SensorManager.AXIS_X,
@@ -398,9 +319,9 @@ GestureDetector.OnDoubleTapListener {
 
     void onSuccess(){
         if (mFailed) mFailed = false;
-        //        Convert the azimuth to degrees in 0.5 degree resolution.
+        // Convert the azimuth to degrees in 0.5 degree resolution.
         mAzimuth = (float) Math.round((Math.toDegrees(mOrientation[0])) *2)/2;
-        //        Adjust the range: 0 < range <= 360 (from: -180 < range <= 180).
+        // Adjust the range: 0 < range <= 360 (from: -180 < range <= 180).
         mAzimuth = (mAzimuth+360)%360; // alternative: mAzimuth = mAzimuth>=0 ? mAzimuth : mAzimuth+360;
         pitch = (float) Math.round((Math.toDegrees(mOrientation[1])) *2)/2;
         roll = (float) Math.round((Math.toDegrees(mOrientation[2])) *2)/2;
@@ -420,9 +341,9 @@ GestureDetector.OnDoubleTapListener {
     
 	void onFailure() {
         if (!mFailed) {
-                mFailed = true;
-                mOrientationData.setText("Failed to retrive rotation Matrix");
-                //sensorAvailable = false;
+        	mFailed = true;
+            mOrientationData.setText("Failed to retrive rotation Matrix");
+            //sensorAvailable = false;
         }
 	}
 	
@@ -442,6 +363,10 @@ GestureDetector.OnDoubleTapListener {
     public boolean onOptionsItemSelected(MenuItem item) {
     	if (item == locationSet) {
     		locationType = (locationType + 1) % 2;
+    		if (locationType == 1) {
+    			timer = new Timer();
+    			timer.schedule(task, 0l, 10000l);
+    		}
     		item.setTitle(locationSetOrNot[locationType]);
     	}
     	else if (item == touchEnable) {
@@ -482,26 +407,149 @@ GestureDetector.OnDoubleTapListener {
         view.addView(glSurfaceView);
     }
 
-	@Override
-	public void onLocationChanged(Location location) {
-		if (!locationCali) {
-			counter++;
-			if (counter > 50) {
-				lat = (location.getLatitude());
-				lon = (location.getLongitude());
-				locationCali = true;
-			}
-		}
-		double latitude = (location.getLatitude());
-	    double longitude = (location.getLongitude());
-		//mLocationData.setText("Latitude: " + String.valueOf(latitude)
-	    //	+ ", Longitude: " + String.valueOf(longitude));
-		dz = (longitude - lon) * 88070;
-		dx = (latitude - lat) * 110992;
+	@Override 
+    public boolean onTouchEvent(MotionEvent event){ 
+        this.mDetector.onTouchEvent(event);
+        
+        return super.onTouchEvent(event);
+    }
+
+    @Override
+    public boolean onDown(MotionEvent event) { 
+        Log.d(DEBUG_TAG,"onDown: " + event.toString()); 
+        if (touchType == 0)
+        	note = "touch disabled";
+        else
+        	note = "down";
+        return true;
+    }
+
+    @Override
+    public boolean onFling(MotionEvent event1, MotionEvent event2, 
+            final float velocityX, final float velocityY) {
+        Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
+        if (touchType == 0)
+        	note = "touch disabled";
+        else {
+        	note = "fling" + " X: "+ velocityX + " Y: " + velocityY;
+        	if (rendererSet) {
+            	glSurfaceView.queueEvent(new Runnable() {
+            		@Override
+            		public void run () {	            			
+                		renderer.moveCamera(velocityX/8000.0f, velocityY/8000.0f);
+            		}
+            	});
+            }
+        	
+        }
+        return true;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent event) {
+        Log.d(DEBUG_TAG, "onLongPress: " + event.toString()); 
+        if (touchType == 0)
+        	note = "touch disabled";
+        else {
+        	note = "long press";
+        	if (rendererSet) {
+        		final float normalizedX = (event.getX() / (float) getDimensions().widthPixels) * 2- 1;
+        		final float normalizedY = -((event.getY() / (float) getDimensions().heightPixels) * 2 -1);
+        		note = note + " X: " + normalizedX + " Y: " + normalizedY;
+            	glSurfaceView.queueEvent(new Runnable() {
+            		@Override
+            		public void run () {	            			
+            			renderer.setObject(0, (float) ((mAzimuth - normalizedX)%360), -pitch+normalizedY*5f, roll);
+            		}
+            	});
+            }	        	
+        }
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, final float distanceX,
+            final float distanceY) {
+        Log.d(DEBUG_TAG, "onScroll: " + e1.toString()+e2.toString());
+        if (touchType == 0)
+        	note = "touch disabled";
+        else {
+        	note = "scroll" + " X: "+distanceX + " Y: "+distanceY;
+
+        }
+        return true;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent event) {
+        Log.d(DEBUG_TAG, "onShowPress: " + event.toString());
+        if (touchType == 0)
+        	note = "touch disabled";
+        else
+        	note = "show press";
+    }
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent event) {
+        Log.d(DEBUG_TAG, "onSingleTapUp: " + event.toString());
+        if (touchType == 0)
+        	note = "touch disabled";
+        else
+        	note = "single tap";
+        return true;
+    }
+
+    @Override
+    public boolean onDoubleTap(MotionEvent event) {
+        Log.d(DEBUG_TAG, "onDoubleTap: " + event.toString());
+        if (touchType == 0)
+        	note = "touch disabled";
+        else
+        	note = "double tap";
+        return true;
+    }
+
+    @Override
+    public boolean onDoubleTapEvent(MotionEvent event) {
+        Log.d(DEBUG_TAG, "onDoubleTapEvent: " + event.toString());
+        if (touchType == 0)
+        	note = "touch disabled";
+        else
+        	note = "double tap event";
+        return true;
+    }
+
+    @Override
+    public boolean onSingleTapConfirmed(MotionEvent event) {
+        Log.d(DEBUG_TAG, "onSingleTapConfirmed: " + event.toString());
+        if (touchType == 0)
+        	note = "touch disabled";
+        else
+        	note = "single tap";
+        return true;
+    }  
+    
+    public void updateLocationResults(String locationString) {
+    	Toast.makeText(this, "Location Fetched: " + locationString, Toast.LENGTH_SHORT).show();
+    	int delim = locationString.indexOf(',');
+    	if (delim == -1)
+    		return;
+    	String latitude = locationString.substring(0, delim-1);
+    	String longitude = locationString.substring(delim+1);
+    	
+    	if (fetchLocationFirstAttempt) {
+    		lon = Double.parseDouble(longitude);
+    		lat = Double.parseDouble(latitude);
+    		fetchLocationFirstAttempt = false;
+    	}
+    	else {
+    		dz = (Double.parseDouble(longitude) - lon) * 88070;
+    		dx = (Double.parseDouble(latitude) - lat) * 110992;
+    	}
 		
-		mLocationData.setText("Ready: " + locationCali + ", Lati: " + String.valueOf(latitude)
-				+ ", Long: " + String.valueOf(longitude) + "\n" + "dx: " + String.valueOf(dx)
+		mLocationData.setText("Latitude: " + latitude
+				+ ", Longitude: " + longitude + "\ndx: " + String.valueOf(dx)
 				+ ", dy: " + String.valueOf(dy) + ", dz: " + String.valueOf(dz));
+		
         if (rendererSet) {
         	glSurfaceView.queueEvent(new Runnable() {
         		@Override
@@ -513,145 +561,53 @@ GestureDetector.OnDoubleTapListener {
         		}
         	});
         }
-	}
-
-	@Override
-	public void onProviderDisabled(String provider) {
-		Toast.makeText(this, "Disabled provider " + provider,
-		        Toast.LENGTH_SHORT).show();
-	}
-
-	@Override
-	public void onProviderEnabled(String provider) {
-		Toast.makeText(this, "Enabled new provider " + provider,
-		        Toast.LENGTH_SHORT).show();		
-	}
-
-	@Override
-	public void onStatusChanged(String provider, int status, Bundle extras) {
-		// TODO Auto-generated method stub
-		
-	}
-	 @Override 
-	    public boolean onTouchEvent(MotionEvent event){ 
-	        this.mDetector.onTouchEvent(event);
-	        
-	        return super.onTouchEvent(event);
-	    }
-
-	    @Override
-	    public boolean onDown(MotionEvent event) { 
-	        Log.d(DEBUG_TAG,"onDown: " + event.toString()); 
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "down";
-	        return true;
-	    }
-
-	    @Override
-	    public boolean onFling(MotionEvent event1, MotionEvent event2, 
-	            final float velocityX, final float velocityY) {
-	        Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else {
-	        	note = "fling" + " X: "+ velocityX + " Y: " + velocityY;
-	        	if (rendererSet) {
-	            	glSurfaceView.queueEvent(new Runnable() {
-	            		@Override
-	            		public void run () {	            			
-	                		renderer.moveCamera(velocityX/8000.0f, velocityY/8000.0f);
-	            		}
-	            	});
-	            }
-	        	
-	        }
-	        return true;
-	    }
-
-	    @Override
-	    public void onLongPress(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onLongPress: " + event.toString()); 
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else {
-	        	note = "long press";
-	        	if (rendererSet) {
-	        		final float normalizedX = (event.getX() / (float) getDimensions().widthPixels) * 2- 1;
-	        		final float normalizedY = -((event.getY() / (float) getDimensions().heightPixels) * 2 -1);
-	        		note = note + " X: " + normalizedX + " Y: " + normalizedY;
-	            	glSurfaceView.queueEvent(new Runnable() {
-	            		@Override
-	            		public void run () {	            			
-	            			renderer.setObject(0, (float) ((mAzimuth - normalizedX)%360), -pitch+normalizedY*5f, roll);
-	            		}
-	            	});
-	            }	        	
-	        }
-	    }
-
-	    @Override
-	    public boolean onScroll(MotionEvent e1, MotionEvent e2, final float distanceX,
-	            final float distanceY) {
-	        Log.d(DEBUG_TAG, "onScroll: " + e1.toString()+e2.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else {
-	        	note = "scroll" + " X: "+distanceX + " Y: "+distanceY;
-
-	        }
-	        return true;
-	    }
-
-	    @Override
-	    public void onShowPress(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onShowPress: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "show press";
-	    }
-
-	    @Override
-	    public boolean onSingleTapUp(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onSingleTapUp: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "single tap";
-	        return true;
-	    }
-
-	    @Override
-	    public boolean onDoubleTap(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onDoubleTap: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "double tap";
-	        return true;
-	    }
-
-	    @Override
-	    public boolean onDoubleTapEvent(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onDoubleTapEvent: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "double tap event";
-	        return true;
-	    }
-
-	    @Override
-	    public boolean onSingleTapConfirmed(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onSingleTapConfirmed: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "single tap";
-	        return true;
-	    }
-
+    }
     
+    TimerTask task = new TimerTask() {
+    	String locationString = null;
+    	@Override
+	    public void run() {
+    		String contentString = null;
+		    try {
+				contentString = getURLContents("http://augmentedrealitymap.appspot.com/json");
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		    
+			try {
+				JSONObject jObj;
+				jObj = new JSONObject(contentString);
+				locationString = jObj.optString("lat").toString() + "," + jObj.optString("lon").toString();
+				final String loc = locationString;
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {						
+						updateLocationResults(loc);					
+					}
+				});
+				
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}		    
+		}
+    	
+    	private String getURLContents(String url) throws ClientProtocolException, IOException {
+			
+			StringBuilder build = new StringBuilder();
+			HttpClient client = new DefaultHttpClient();
+			HttpGet httpGet = new HttpGet(url);
+		    HttpResponse response = client.execute(httpGet);
+			HttpEntity entity = response.getEntity();
+			InputStream content = entity.getContent();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(content));
+			String con;
+			while ((con = reader.readLine()) != null) {
+				build.append(con);
+			}
+			return build.toString();
+		}	
+	};
 }

@@ -1,26 +1,23 @@
 package com.example.util;
 
-import static android.opengl.GLES20.GL_VERTEX_SHADER;
-import static android.opengl.GLES20.GL_FRAGMENT_SHADER;
 import static android.opengl.GLES20.GL_COMPILE_STATUS;
+import static android.opengl.GLES20.GL_FRAGMENT_SHADER;
 import static android.opengl.GLES20.GL_LINK_STATUS;
 import static android.opengl.GLES20.GL_VALIDATE_STATUS;
-
-import static android.opengl.GLES20.glCreateShader;
-import static android.opengl.GLES20.glShaderSource;
-import static android.opengl.GLES20.glCompileShader;
-import static android.opengl.GLES20.glGetShaderiv;
-import static android.opengl.GLES20.glGetShaderInfoLog;
-import static android.opengl.GLES20.glDeleteShader;
-import static android.opengl.GLES20.glCreateProgram;
+import static android.opengl.GLES20.GL_VERTEX_SHADER;
 import static android.opengl.GLES20.glAttachShader;
-import static android.opengl.GLES20.glLinkProgram;
-import static android.opengl.GLES20.glGetProgramiv;
-import static android.opengl.GLES20.glGetProgramInfoLog;
+import static android.opengl.GLES20.glCompileShader;
+import static android.opengl.GLES20.glCreateProgram;
+import static android.opengl.GLES20.glCreateShader;
 import static android.opengl.GLES20.glDeleteProgram;
+import static android.opengl.GLES20.glDeleteShader;
+import static android.opengl.GLES20.glGetProgramInfoLog;
+import static android.opengl.GLES20.glGetProgramiv;
+import static android.opengl.GLES20.glGetShaderInfoLog;
+import static android.opengl.GLES20.glGetShaderiv;
+import static android.opengl.GLES20.glLinkProgram;
+import static android.opengl.GLES20.glShaderSource;
 import static android.opengl.GLES20.glValidateProgram;
-import static android.opengl.GLES20.glBindAttribLocation;
-
 import android.util.Log;
 
 public class ShaderHelper {

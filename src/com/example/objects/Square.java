@@ -4,7 +4,6 @@ import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.glDrawArrays;
 
 import com.example.data.VertexArray;
-import com.example.util.TextureShaderProgram;
 import com.example.util.TransparentTextureShaderProgram;
 
 public class Square {

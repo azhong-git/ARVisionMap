@@ -3,8 +3,6 @@ package com.example.util;
 import static android.opengl.GLES20.glUseProgram;
 import android.content.Context;
 
-import com.example.openglbasics.R;
-
 public class Program {
 
 	// for vertex and fragment shaders
