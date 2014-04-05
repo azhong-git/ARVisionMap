@@ -1,12 +1,15 @@
 # ignore the following files
 
-.*/*
-.*
-!.gitignore
+# Dalvik VM files
+*.dex
+
+# Java class files
+*.class
 
 # no binary files except for .apk
-bin/*
+bin/
 !bin/*.apk
+gen/
 
 # jni includes user-defined environments for linking C programs
 jni/*
