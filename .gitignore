@@ -1,7 +1,24 @@
+# ignore the following files
+
+.*/*
+.*
+!.gitignore
+
+# no binary files except for .apk
 bin/*
+!bin/*.apk
+
+# jni includes user-defined environments for linking C programs
 jni/*
+
+# obj contains binary files from C programs
 obj/*
 *.o
 *.so
 *.o.d
+
+# user-defined project properties
 project.properties
+
+# backup files
+*~
