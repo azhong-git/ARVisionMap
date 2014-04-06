@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
@@ -8,20 +8,57 @@
     <ExpandableListView
         android:id="@+id/expandableListView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-    </ExpandableListView>
-
+        android:layout_height="80dp" >
+        
+    </ExpandableListView>    
+        
     <FrameLayout
         android:id="@+id/camera_preview"
         android:layout_width="fill_parent"
-        android:layout_height="0dip"
-        android:layout_weight="0.59">
+        android:layout_height="400dip"
+        android:layout_weight="0.59" 
+        android:layout_alignLeft="@+id/expandableListView"
+        android:layout_below="@+id/expandableListView"
+		android:layout_marginTop="5dp" >
+        
+    </FrameLayout>    
 
-    </FrameLayout>
     
-            
+    <FrameLayout
+        android:layout_width="fill_parent"
+        android:layout_height="400dip"
+        android:layout_weight="0.59" 
+        android:layout_alignLeft="@+id/expandableListView"
+        android:layout_below="@+id/expandableListView"
+		android:layout_marginTop="5dp">
+		
+    	<Button
+            android:id="@+id/forwardButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/expandableListView"
+            android:layout_marginTop="300dp"
+            android:layout_toRightOf="@+id/backwardButton"
+            android:onClick="myButtonClickHandler"
+            android:text="Next Step" />
+        
+        <Button
+            android:id="@+id/backwardButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="200dp"
+            android:layout_below="@+id/expandableListView"
+            android:layout_toLeftOf="@+id/forwardButton"
+            android:layout_alignParentRight="true"
+            android:onClick="myButtonClickHandler"
+            android:text="Last Step" />                
+        
+    </FrameLayout>
+        
     <FrameLayout
         android:id="@+id/locationview"
+        android:layout_alignLeft="@+id/expandableListView"
+        android:layout_below="@+id/camera_preview"
         android:layout_width="match_parent"
         android:layout_height="32dp" >
 
@@ -29,9 +66,11 @@
     
     <FrameLayout
         android:id="@+id/topview"
+        android:layout_alignLeft="@+id/expandableListView"
+        android:layout_below="@+id/locationview"
         android:layout_width="match_parent"
         android:layout_height="16dp" >
 
     </FrameLayout>
 
-</LinearLayout>
+</RelativeLayout>

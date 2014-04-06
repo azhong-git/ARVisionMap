@@ -52,6 +52,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.ExpandableListView.OnGroupExpandListener;
+import android.widget.ExpandableListView.OnGroupCollapseListener;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -66,6 +69,7 @@ GestureDetector.OnDoubleTapListener {
 	ExpandableListView menuview;
     List<String> listDataHeader;
     HashMap<String, List<String>> listDataChild;
+    boolean[] modeStatus = {true,false,false,false};  
 	
 	// OpenGL content view
 	private GLSurfaceView glSurfaceView;
@@ -207,7 +211,7 @@ GestureDetector.OnDoubleTapListener {
         topview = (FrameLayout) findViewById(R.id.topview);
         locationview = (FrameLayout) findViewById(R.id.locationview);        
  
-        
+        // code for setting menu items - CY: start
         
         // get the listview
         menuview = (ExpandableListView) findViewById(R.id.expandableListView);
@@ -216,8 +220,26 @@ GestureDetector.OnDoubleTapListener {
         listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild); 
         // setting list adapter
         menuview.setAdapter(listAdapter);
-
         
+        menuview.setOnChildClickListener(new OnChildClickListener() {
+        	@Override
+            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+                Toast.makeText(getApplicationContext(), listDataHeader.get(groupPosition)+" : "+listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition), Toast.LENGTH_SHORT).show();
+                //String mode_string = listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition); 
+                //listDataHeader.set(groupPosition, mode_string);
+                return false;
+            }
+        });
+        
+        menuview.setOnGroupExpandListener(new OnGroupExpandListener() {
+        	@Override
+        	public void onGroupExpand (int groupPosition) {
+        		//listDataHeader.set(groupPosition, "Mode Selection");
+        	}
+        	
+        });
+        
+        // code for setting menu items - CY: end
         
         initCamera();
 
@@ -674,6 +696,7 @@ GestureDetector.OnDoubleTapListener {
 	        return true;
 	    }
 
+
 	    private void prepareListData() {
 	        listDataHeader = new ArrayList<String>();
 	        listDataChild = new HashMap<String, List<String>>();
@@ -689,5 +712,16 @@ GestureDetector.OnDoubleTapListener {
 	        modegroup.add("Calendar");
 	 
 	        listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
+	    }
+	    
+	    public void myButtonClickHandler(View view) {
+	        switch (view.getId()) {
+	        case R.id.forwardButton:
+	        	Toast.makeText(this, "Forward Button Clicked", Toast.LENGTH_SHORT).show();
+	            break;
+	        case R.id.backwardButton:
+	        	Toast.makeText(this, "Backward Button Clicked", Toast.LENGTH_SHORT).show();
+	            break;
+	        }
 	    }
 }

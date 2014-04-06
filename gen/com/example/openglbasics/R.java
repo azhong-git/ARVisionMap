@@ -61,16 +61,18 @@ containing a value of this type.
         public static final int tableobj=0x7f02000b;
     }
     public static final class id {
-        public static final int action_settings=0x7f050009;
+        public static final int action_settings=0x7f05000b;
         public static final int any=0x7f050000;
         public static final int back=0x7f050001;
+        public static final int backwardButton=0x7f050006;
         public static final int camera_preview=0x7f050004;
         public static final int expandableListView=0x7f050003;
+        public static final int forwardButton=0x7f050005;
         public static final int front=0x7f050002;
-        public static final int lblListHeader=0x7f050007;
-        public static final int lblListItem=0x7f050008;
-        public static final int locationview=0x7f050005;
-        public static final int topview=0x7f050006;
+        public static final int lblListHeader=0x7f050009;
+        public static final int lblListItem=0x7f05000a;
+        public static final int locationview=0x7f050007;
+        public static final int topview=0x7f050008;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;
