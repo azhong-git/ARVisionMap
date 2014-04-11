@@ -3,50 +3,65 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" >
-
-    <ExpandableListView
-        android:id="@+id/expandableListView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-        
-    </ExpandableListView>
-             
-		
+    android:orientation="vertical" >    
+             	
     <FrameLayout
         android:id="@+id/camera_preview"
 	    android:layout_width="fill_parent"
-	    android:layout_height="440dip"
-	    android:layout_weight="0.59" 
-	    android:layout_alignLeft="@+id/expandableListView"
-	    android:layout_below="@+id/expandableListView" >            
-		
+	    android:layout_height="480dip"
+	    android:layout_weight="0.59" >
+	    
+	</FrameLayout>>
+   	       
+	<FrameLayout
+	    android:id="@+id/control_overlay"
+	    android:layout_width="fill_parent"
+	    android:layout_height="480dip"
+	    android:layout_weight="0.2" >
+	    
+	    <ExpandableListView
+        	android:id="@+id/expandableListView"
+        	android:layout_weight="0.9"
+        	android:layout_width="match_parent"
+        	android:layout_height="wrap_content" >
+        
+    	</ExpandableListView>
+	    
     	<Button
             android:id="@+id/forwardButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/expandableListView"
-            android:layout_marginTop="300dp"
+            android:layout_marginTop="390dp"
             android:layout_toRightOf="@+id/backwardButton"
+            android:layout_gravity="right"
             android:onClick="myButtonClickHandler"
             android:text="Next Step" />
         
+    	<Button
+            android:id="@+id/showButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="390dp"           
+            android:layout_gravity="bottom|center_horizontal"
+            android:onClick="myButtonClickHandler"
+            android:text="Show Prototype" /> 
+    	
         <Button
             android:id="@+id/backwardButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="200dp"
+            android:layout_marginTop="390dp"
             android:layout_below="@+id/expandableListView"
             android:layout_toLeftOf="@+id/forwardButton"
-            android:layout_alignParentRight="true"
+            android:layout_gravity="left"
             android:onClick="myButtonClickHandler"
             android:text="Last Step" />                
-        
-    </FrameLayout>
+       
+    </FrameLayout>  
         
     <FrameLayout
-        android:id="@+id/locationview"
-        android:layout_alignLeft="@+id/expandableListView"
+        android:id="@+id/locationview"        
         android:layout_below="@+id/camera_preview"
         android:layout_width="match_parent"
         android:layout_height="42dp" >
@@ -54,8 +69,7 @@
     </FrameLayout>
     
     <FrameLayout
-        android:id="@+id/topview"
-        android:layout_alignLeft="@+id/expandableListView"
+        android:id="@+id/topview"        
         android:layout_below="@+id/locationview"
         android:layout_width="match_parent"
         android:layout_height="16dp"

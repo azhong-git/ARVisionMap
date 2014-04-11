@@ -44,18 +44,22 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ExpandableListView.OnGroupExpandListener;
 import android.widget.ExpandableListView.OnGroupCollapseListener;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -69,8 +73,14 @@ GestureDetector.OnDoubleTapListener {
 	ExpandableListView menuview;
     List<String> listDataHeader;
     HashMap<String, List<String>> listDataChild;
-    boolean[] modeStatus = {true,false,false,false};  
+    int modeStatus;  
 	
+    // Mode
+    final int modeVisitor = 0;
+    final int modeApprentice = 1;
+    final int modeNavigation = 2;
+    final int modeCalendar = 3;
+    
 	// OpenGL content view
 	private GLSurfaceView glSurfaceView;
 	private boolean rendererSet = false;
@@ -99,6 +109,8 @@ GestureDetector.OnDoubleTapListener {
     
 	// OpenGL layout
 	FrameLayout view;
+	// control panel layout
+	FrameLayout controlview;
 	// sensor layout
 	FrameLayout topview;	
 	// sensor view
@@ -209,7 +221,8 @@ GestureDetector.OnDoubleTapListener {
 
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         topview = (FrameLayout) findViewById(R.id.topview);
-        locationview = (FrameLayout) findViewById(R.id.locationview);        
+        locationview = (FrameLayout) findViewById(R.id.locationview);
+        controlview = (FrameLayout) findViewById(R.id.control_overlay);
  
         // code for setting menu items - CY: start
         
@@ -219,17 +232,46 @@ GestureDetector.OnDoubleTapListener {
         prepareListData();
         listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild); 
         // setting list adapter
-        menuview.setAdapter(listAdapter);
+        menuview.setAdapter(listAdapter);        
+        modeStatus = modeVisitor;
+        /*
+        final Button calButton = new Button(this);
+        calButton.setText("Calendar Button");
+        calButton.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
+        */
+        
+        final Button showButton = (Button) findViewById(R.id.showButton);
+        final Button fwdButton = (Button) findViewById(R.id.forwardButton);
+        controlview.removeView(fwdButton);
+        final Button backButton = (Button) findViewById(R.id.backwardButton);
+        controlview.removeView(backButton);
         
         menuview.setOnChildClickListener(new OnChildClickListener() {
         	@Override
             public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-                Toast.makeText(getApplicationContext(), listDataHeader.get(groupPosition)+" : "+listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition), Toast.LENGTH_SHORT).show();
+        		int prevStatus = modeStatus;
+
+        		modeStatus = childPosition;
+                Toast.makeText(getApplicationContext(), listDataHeader.get(groupPosition)+" : "+listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition) + "(code: " + modeStatus + ")", Toast.LENGTH_SHORT).show();
                 //String mode_string = listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition); 
                 //listDataHeader.set(groupPosition, mode_string);
+                if (modeStatus == modeVisitor && modeStatus != prevStatus)
+                	controlview.addView(showButton);
+                else if (modeStatus != modeVisitor && prevStatus == modeVisitor)
+                	controlview.removeView(showButton);
+                
+                if (modeStatus == modeApprentice && modeStatus != prevStatus) {
+                	controlview.addView(fwdButton);
+                	controlview.addView(backButton);
+                }
+                else if (modeStatus != modeApprentice && prevStatus == modeApprentice) {
+                	controlview.removeView(fwdButton);
+                	controlview.removeView(backButton);
+                }
+                
                 return false;
             }
-        });
+        });        
         
         menuview.setOnGroupExpandListener(new OnGroupExpandListener() {
         	@Override
@@ -721,6 +763,9 @@ GestureDetector.OnDoubleTapListener {
 	            break;
 	        case R.id.backwardButton:
 	        	Toast.makeText(this, "Backward Button Clicked", Toast.LENGTH_SHORT).show();
+	            break;
+	        case R.id.showButton:
+	        	Toast.makeText(this, "Show Product Button Clicked", Toast.LENGTH_SHORT).show();
 	            break;
 	        }
 	    }
