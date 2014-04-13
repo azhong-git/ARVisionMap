@@ -1,0 +1,10 @@
+/*
+/*/
+
+!/.git/
+!/src/
+!/res/
+!/libs/
+!AndroidManifest.xml
+!lint.xml
+!.gitignore
