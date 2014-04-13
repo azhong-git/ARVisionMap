@@ -27,6 +27,8 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
@@ -35,11 +37,15 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.support.v13.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -77,6 +83,9 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     // Menu
     private MenuItem mWorldMode, mVisitorMode, mApprenticeMode;
     
+    SectionsPagerAdapter mSectionsPagerAdapter;
+	ViewPager mViewPager;
+	
 	// sensors
     private SensorManager mSensMan;
     static public float mAzimuth;
@@ -167,7 +176,12 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 
         initGl();  // initialize OpenGL view
         timer = new Timer();
-        timer.schedule(task, 0l, 10000l);        
+        timer.schedule(task, 0l, 10000l);   
+        
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
+		mViewPager = (ViewPager) findViewById(R.id.pager);
+		mViewPager.setAdapter(mSectionsPagerAdapter);
+		mViewPager.setVisibility(View.INVISIBLE);
     }
 
     @Override
@@ -318,18 +332,21 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     		if (!rendererSet) {
     			view.addView(glSurfaceView);
     			rendererSet = true;
+    			mViewPager.setVisibility(View.INVISIBLE);
         	}
     	}
     	else if (item == mVisitorMode) {
     		if (rendererSet) {
     			view.removeView(glSurfaceView);
     			rendererSet = false;
+    			mViewPager.setVisibility(View.VISIBLE);
         	}
     	}
     	else if (item == mApprenticeMode) {
     		if (rendererSet) {
     			view.removeView(glSurfaceView);
     			rendererSet = false;
+    			mViewPager.setVisibility(View.VISIBLE);
         	}
     	}
     	return true;
@@ -443,4 +460,44 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 			return build.toString();
 		}	
 	};
+	
+	public class SectionsPagerAdapter extends FragmentPagerAdapter {
+
+		public SectionsPagerAdapter(FragmentManager fm) {
+			super(fm);
+		}
+
+		@Override
+		public Fragment getItem(int position) {
+			return PlaceholderFragment.newInstance(position + 1);
+		}
+
+		@Override
+		public int getCount() {
+			return 5;
+		}
+	}
+
+	public static class PlaceholderFragment extends Fragment {
+		private static final String ARG_SECTION_NUMBER = "section_number";
+
+		public static PlaceholderFragment newInstance(int sectionNumber) {
+			PlaceholderFragment fragment = new PlaceholderFragment();
+			Bundle args = new Bundle();
+			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
+			fragment.setArguments(args);
+			return fragment;
+		}
+
+		public PlaceholderFragment() {
+		}
+
+		@Override
+		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+			View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
+			textView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
+			return rootView;
+		}
+	}
 }
