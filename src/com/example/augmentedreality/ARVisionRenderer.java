@@ -2,13 +2,17 @@ package com.example.augmentedreality;
 
 import static android.opengl.GLES20.GL_BLEND;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
+import static android.opengl.GLES20.GL_CULL_FACE;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_TEST;
+import static android.opengl.GLES20.GL_FRONT;
+import static android.opengl.GLES20.GL_FRONT_AND_BACK;
 import static android.opengl.GLES20.GL_ONE;
 import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
+import static android.opengl.GLES20.glCullFace;
 import static android.opengl.GLES20.glEnable;
 import static android.opengl.GLES20.glViewport;
 import static android.opengl.Matrix.multiplyMM;
@@ -69,7 +73,7 @@ public class ARVisionRenderer implements Renderer {
 	//---------------------------------------------------------------------------------
 	// ---------------------------- Location parameters -------------------------------
 	// projection matrix parameters
-	private final float far = 10f;
+	private final float far = 20f;
 	private final float near = 0.2f;
 
 	// distance on the z axis
@@ -127,13 +131,15 @@ public class ARVisionRenderer implements Renderer {
 	private RawObject[] object;
 	private int [] rawObjTextureMap = {R.drawable.surfobj, R.drawable.tableobj, R.drawable.chairobj};
 	private int [] rawObjTexture = {R.drawable.surf, R.drawable.table, R.drawable.chair};
-	
 	// compass object
 	private Square compass;
 	private int compassTexture;
 
 	// object without texture
 	private Arrow[] arrow;
+	private float [][] arrowPallette= {{0f, 0.40f, 0.20f}, {0.4f, 0f, 0f}, {0f, 0.2f, 0.4f}};
+	private int [] arrowColor;
+	
 	//---------------------------------------------------------------------------------
 	//------------------------------- Shader programs ---------------------------------
 	private TextureShaderProgram textureProgram;
@@ -162,12 +168,16 @@ public class ARVisionRenderer implements Renderer {
 		objectTexture = new int [numObjects];
 		objLoc = new float [numObjects][3];
 		objRot = new float [numObjects][3];
+		arrowColor = new int [numArrows];
 		
 		for (int i = 0; i < numObjects; i++) {
 			objectType[i] = TextResourceReader.readNextInt(scan);
 			// caption or raw object
 			if (objectType[i] != 2) {
 				objectTexture[i] = TextResourceReader.readNextInt(scan);
+			}
+			else {
+				arrowColor[i-numTextures] = TextResourceReader.readNextInt(scan);
 			}
 			for (int j = 0; j < 3; j++)
 				objLoc[i][j] = TextResourceReader.readNextFloat(scan);
@@ -291,11 +301,9 @@ public class ARVisionRenderer implements Renderer {
 		}
 
 		for (; i < numObjects; i++) {
-			rotateM(translationMatrix[i], 0, objRot[i][1], 0, 1, 0);
+			//rotateM(translationMatrix[i], 0, objRot[i][0], 1, 0, 0);
 			translateM(translationMatrix[i], 0, objLoc[i][0], objLoc[i][1], objLoc[i][2]);
 			rotateM(rotationMatrix[i], 0, objRot[i][0], 1, 0, 0);
-			//rotateM(rotationMatrix[i], 0, objRot[i][1], 0, 1, 0);
-			//rotateM(rotationMatrix[i], 0, objRot[i][1], 0, 0, 1);
 			multiplyMM(modelMatrix[i], 0, translationMatrix[i], 0,
 					rotationMatrix[i], 0);
 			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0,
@@ -318,7 +326,6 @@ public class ARVisionRenderer implements Renderer {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
 		int i = 0;
 		textureProgram.useProgram();
 		for (; i < numCaptions; i++) {
@@ -336,7 +343,8 @@ public class ARVisionRenderer implements Renderer {
 
 		colorProgram.useProgram();
 		for (; i < numObjects; i++) {
-			colorProgram.setUniforms(finalMatrix[i], 0f, 0.40f, 0.20f, 0.3f);
+			colorProgram.setUniforms(finalMatrix[i], arrowPallette[arrowColor[i-numTextures]][0], 
+					arrowPallette[arrowColor[i-numTextures]][1], arrowPallette[arrowColor[i-numTextures]][2], 0.6f);
 			arrow[i-numTextures].bindData(colorProgram);
 			arrow[i-numTextures].draw();
 		}

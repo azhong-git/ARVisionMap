@@ -21,7 +21,7 @@ public class Arrow {
 	
 	public Arrow(float radiusCone, float heightCone, float radiusCylinder, float heightCylinder, int numPoints) {
 		GeneratedData generatedData = ObjectBuilder.createArrow(new Cylinder(new Point(0f, 0f, 0f), radiusCylinder, heightCylinder), 
-				new Cone(new Point(0f, heightCylinder/2f, 0f), radiusCone, heightCone), numPoints);
+				new Cone(new Point(0f, -heightCylinder/2f, 0f), radiusCone, heightCone), numPoints);
 		this.radiusCylinder = radiusCylinder;
 		this.radiusCone = radiusCone;
 		this.heightCone = heightCone;

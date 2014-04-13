@@ -116,18 +116,23 @@ GestureDetector.OnDoubleTapListener {
     public static float[] mRemapedRotationM = new float[16];
     public static boolean sensorAvailable = false;
     public Timer timer;
+    public long timerInterval = 5000l;
     
     private boolean mFailed;
     
 	private final float ALPHA = 0.15f;
-	
+
 	// home center
-	double lat = 0.0;//= 37.875133;
-	double lon = 0.0;//= -122.2595580;
+	double lat = 37.87565;
+	double lon = -122.25869;
+	public static int METER_PER_LAT = 110994;
+	public static int METER_PER_LON = 87980;
 	double dx = 0.0;
 	double dy = 0.0;
 	double dz = 0.0;
-	boolean fetchLocationFirstAttempt = true;
+	// if true: initial map loaded relatively, if false use lat and lon as defined
+	boolean fetchLocationFirstAttempt = false;
+	private String prevLoc = "";
 	
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -365,7 +370,7 @@ GestureDetector.OnDoubleTapListener {
     		locationType = (locationType + 1) % 2;
     		if (locationType == 1) {
     			timer = new Timer();
-    			timer.schedule(task, 0l, 10000l);
+    			timer.schedule(task, 0l, timerInterval);
     		}
     		item.setTitle(locationSetOrNot[locationType]);
     	}
@@ -529,21 +534,20 @@ GestureDetector.OnDoubleTapListener {
     }  
     
     public void updateLocationResults(String locationString) {
-    	Toast.makeText(this, "Location Fetched: " + locationString, Toast.LENGTH_SHORT).show();
-    	int delim = locationString.indexOf(',');
-    	if (delim == -1)
-    		return;
-    	String latitude = locationString.substring(0, delim-1);
+    	//Toast.makeText(this, "Location Updated: " + locationString, Toast.LENGTH_SHORT).show();   
+		int delim = locationString.indexOf(',');
+		if (delim == -1)
+			return;
+		String latitude = locationString.substring(0, delim-1);
     	String longitude = locationString.substring(delim+1);
-    	
     	if (fetchLocationFirstAttempt) {
     		lon = Double.parseDouble(longitude);
     		lat = Double.parseDouble(latitude);
     		fetchLocationFirstAttempt = false;
     	}
     	else {
-    		dz = (Double.parseDouble(longitude) - lon) * 88070;
-    		dx = (Double.parseDouble(latitude) - lat) * 110992;
+    		dz = (Double.parseDouble(longitude) - lon) * METER_PER_LON;
+    		dx = (Double.parseDouble(latitude) - lat) * METER_PER_LAT;
     	}
 		
 		mLocationData.setText("Latitude: " + latitude
@@ -581,12 +585,15 @@ GestureDetector.OnDoubleTapListener {
 				jObj = new JSONObject(contentString);
 				locationString = jObj.optString("lat").toString() + "," + jObj.optString("lon").toString();
 				final String loc = locationString;
-				runOnUiThread(new Runnable() {
-					@Override
-					public void run() {						
-						updateLocationResults(loc);					
-					}
-				});
+				if (!loc.equals(prevLoc)) {
+					prevLoc = loc;
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {						
+							updateLocationResults(loc);					
+						}
+					});
+				}
 				
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
