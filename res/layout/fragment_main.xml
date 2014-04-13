@@ -8,12 +8,20 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.augmentedreality.ARVIsionActivity$PlaceholderFragment" >
 
+    <ImageView
+        android:id="@+id/image_view"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:adjustViewBounds="true"
+	    android:contentDescription="Products" />
+    
     <TextView
         android:id="@+id/section_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
         android:textColor="#ffffff"
-        android:textSize="120sp" />
+        android:textSize="80sp" />
 
 </RelativeLayout>

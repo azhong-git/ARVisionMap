@@ -32,19 +32,34 @@
 	    	tools:context="com.example.augmentedreality.ARVIsionActivity" />
     </FrameLayout>
 
-    <TextView
-        android:id="@+id/locationview"
-        android:layout_width="match_parent"
-        android:layout_height="32dp" >
-
-    </TextView>
+    <LinearLayout style="?android:attr/buttonBarStyle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" 
+        android:background="#000000">
+	    <Button style="?android:attr/buttonBarButtonStyle"
+	        android:id="@+id/wmode"
+	        android:layout_width="0dip"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:text="World Mode" 
+	        android:onClick="setWorldMode"/>
+	        
+    	<Button style="?android:attr/buttonBarButtonStyle"
+	        android:id="@+id/appmode"
+	        android:layout_width="0dip"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:text="Apprentice Mode" 
+	        android:onClick="setApprenticeMode"/>
     
-    <TextView
-        android:id="@+id/sensorview"
-        android:layout_width="match_parent"
-        android:layout_height="16dp" >
-
-    </TextView>
-
-
+    	<Button style="?android:attr/buttonBarButtonStyle"
+	        android:id="@+id/vmode"
+	        android:layout_width="0dip"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:text="Visitor Mode"
+	        android:onClick="setVisitorMode" />
+    </LinearLayout>
+    
 </LinearLayout>

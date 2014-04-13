@@ -39,15 +39,13 @@ import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -73,16 +71,9 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	
 	// OpenGL layout
 	FrameLayout view;
-	// sensor view
-    TextView mOrientationData;
-    // location view
-    TextView mLocationData;
     // Loading text
     TextView mLoadingText;
-    
-    // Menu
-    private MenuItem mWorldMode, mVisitorMode, mApprenticeMode;
-    
+        
     SectionsPagerAdapter mSectionsPagerAdapter;
 	ViewPager mViewPager;
 	
@@ -111,6 +102,8 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	double dy = 0.0;
 	double dz = 0.0;
 	boolean fetchLocationFirstAttempt = true;
+	
+	public static int mode = 0; // World
 	
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -158,8 +151,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         setContentView(R.layout.activity_main);
 
         view = (FrameLayout) findViewById(R.id.camera_preview);           
-        mOrientationData = (TextView) findViewById(R.id.sensorview);
-        mLocationData = (TextView) findViewById(R.id.locationview);
         mLoadingText = (TextView) findViewById(R.id.loading_text);
         
         initCamera();
@@ -290,7 +281,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         mAzimuth = (mAzimuth+360)%360; // alternative: mAzimuth = mAzimuth>=0 ? mAzimuth : mAzimuth+360;
         pitch = (float) Math.round((Math.toDegrees(mOrientation[1])) *2)/2;
         roll = (float) Math.round((Math.toDegrees(mOrientation[2])) *2)/2;
-        mOrientationData.setText("Azimuth= " + mAzimuth + " Pitch=" + pitch + " Roll=" + roll);
         sensorAvailable = true;
 	}
 
@@ -307,7 +297,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	void onFailure() {
         if (!mFailed) {
         	mFailed = true;
-            mOrientationData.setText("Failed to retrive rotation Matrix");
+            Toast.makeText(this, "Failed to retrive rotation Matrix", Toast.LENGTH_LONG).show();
             //sensorAvailable = false;
         }
 	}
@@ -317,67 +307,44 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         // Do nothing
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-    	mWorldMode = menu.add("World Mode");
-    	mVisitorMode = menu.add("Visitor Mode");
-    	mApprenticeMode = menu.add("Apprentice Mode");
-    	return true;
-    }
-    
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+	public void setWorldMode(View arg) {
+		if (!rendererSet) {
+			view.addView(glSurfaceView);
+			rendererSet = true;
+			mViewPager.setVisibility(View.INVISIBLE);
+    	}
+		mode = 0;
+	}
+	
+	public void setVisitorMode(View arg) {
+		if (rendererSet) {
+			view.removeView(glSurfaceView);
+			rendererSet = false;
+			mViewPager.setVisibility(View.VISIBLE);
+    	}
+		mViewPager.setCurrentItem(0);
+		mode = 1;
+	}
 
-    	if (item == mWorldMode) {
-    		if (!rendererSet) {
-    			view.addView(glSurfaceView);
-    			rendererSet = true;
-    			mViewPager.setVisibility(View.INVISIBLE);
-        	}
+	public void setApprenticeMode(View arg) {
+		if (rendererSet) {
+			view.removeView(glSurfaceView);
+			rendererSet = false;
+			mViewPager.setVisibility(View.VISIBLE);
     	}
-    	else if (item == mVisitorMode) {
-    		if (rendererSet) {
-    			view.removeView(glSurfaceView);
-    			rendererSet = false;
-    			mViewPager.setVisibility(View.VISIBLE);
-        	}
-    	}
-    	else if (item == mApprenticeMode) {
-    		if (rendererSet) {
-    			view.removeView(glSurfaceView);
-    			rendererSet = false;
-    			mViewPager.setVisibility(View.VISIBLE);
-        	}
-    	}
-    	return true;
-    }
-    
-    
-	public DisplayMetrics getDimensions(){
-		DisplayMetrics metrics = new DisplayMetrics();
-		getWindowManager().getDefaultDisplay().getMetrics(metrics);
-		return metrics;
-	} 
-    
-    
+		mViewPager.setCurrentItem(0);
+		mode = 2;
+	}
+
 	private void initGl() {
         renderer = new ARVisionRenderer(this);
         glSurfaceView = new GLSurfaceView(this);
-        final boolean supportsEs2 = true;
-        if (supportsEs2) {
-        	glSurfaceView.setEGLContextClientVersion(2);
-        	glSurfaceView.setZOrderMediaOverlay(true);
-        	glSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
-        	glSurfaceView.setRenderer(renderer);
-        	glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-        	rendererSet = true;
-        }
-        else {
-        	Toast.makeText(this, "This device does not support OpenGL ES 2.0.",
-        			Toast.LENGTH_LONG).show();
-        	return;
-        }
-        
+    	glSurfaceView.setEGLContextClientVersion(2);
+    	glSurfaceView.setZOrderMediaOverlay(true);
+    	glSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
+    	glSurfaceView.setRenderer(renderer);
+    	glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+    	rendererSet = true;
         view.addView(glSurfaceView);
     }
     
@@ -398,10 +365,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     		dz = (Double.parseDouble(longitude) - lon) * 88070;
     		dx = (Double.parseDouble(latitude) - lat) * 110992;
     	}
-		
-		mLocationData.setText("Latitude: " + latitude
-				+ ", Longitude: " + longitude + "\ndx: " + String.valueOf(dx)
-				+ ", dy: " + String.valueOf(dy) + ", dz: " + String.valueOf(dz));
 		
         if (rendererSet) {
         	glSurfaceView.queueEvent(new Runnable() {
@@ -474,7 +437,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 
 		@Override
 		public int getCount() {
-			return 5;
+			return 4;
 		}
 	}
 
@@ -495,8 +458,33 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 		@Override
 		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 			View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+			int sectionNum = getArguments().getInt(ARG_SECTION_NUMBER);
 			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-			textView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
+			textView.setText(Integer.toString(sectionNum));
+			
+			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
+			
+			//if (mode == 0) 
+			{
+				if (sectionNum == 1)
+					imgView.setImageResource(R.drawable.product1);
+				else if (sectionNum == 2)
+					imgView.setImageResource(R.drawable.product2);
+				else if (sectionNum == 3)
+					imgView.setImageResource(R.drawable.product3);
+				else if (sectionNum == 4)
+					imgView.setImageResource(R.drawable.product4);
+			} 
+			/*else if (mode == 1) {
+				if (sectionNum == 1)
+					imgView.setImageResource(R.drawable.product1);
+				else if (sectionNum == 2)
+					imgView.setImageResource(R.drawable.product2);
+				else if (sectionNum == 3)
+					imgView.setImageResource(R.drawable.product3);
+				else if (sectionNum == 4)
+					imgView.setImageResource(R.drawable.product4);
+			}*/
 			return rootView;
 		}
 	}
