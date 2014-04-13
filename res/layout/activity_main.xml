@@ -56,9 +56,48 @@
             android:layout_toLeftOf="@+id/forwardButton"
             android:layout_gravity="left"
             android:onClick="myButtonClickHandler"
-            android:text="Last Step" />                
+            android:text="Last Step" />
+
+        <TextView
+            android:id="@+id/flowChartStepView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="200dp"
+            android:textSize="28sp"
+            android:textStyle="bold|italic"
+            android:textColor="#ff0000"
+            android:text="" />
        
-    </FrameLayout>  
+    </FrameLayout>
+    
+	<FrameLayout
+	    android:id="@+id/calendar_control_overlay"
+	    android:layout_width="fill_parent"
+	    android:layout_height="480dip">
+
+		<CheckBox
+		    android:id="@+id/checkbox_scheduled"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="Scheduled Soon"
+		    android:layout_gravity="bottom|left" />
+		<CheckBox
+		    android:id="@+id/checkbox_occupied"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="Occupied"		    
+		    android:layout_gravity="bottom|left"
+		    android:layout_marginBottom="40dp" />
+		<CheckBox
+		    android:id="@+id/checkbox_available"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="Available"
+		    android:layout_gravity="bottom|left"
+		    android:layout_marginBottom="80dp" />
+	    
+    </FrameLayout>>
         
     <FrameLayout
         android:id="@+id/locationview"        

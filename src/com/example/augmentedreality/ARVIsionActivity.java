@@ -54,6 +54,9 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ExpandableListView.OnGroupExpandListener;
@@ -68,18 +71,30 @@ import com.example.openglbasics.R;
 
 public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, LocationListener, GestureDetector.OnGestureListener,
 GestureDetector.OnDoubleTapListener {
-	// Expandable list view for menu	
+	// expandable list view for menu	
 	ExpandableListAdapter listAdapter;
 	ExpandableListView menuview;
     List<String> listDataHeader;
     HashMap<String, List<String>> listDataChild;
     int modeStatus;  
 	
-    // Mode
+    // mode
     final int modeVisitor = 0;
     final int modeApprentice = 1;
     final int modeNavigation = 2;
     final int modeCalendar = 3;
+       
+    // control variables
+
+    	// flow chart
+	    int currentStep = 1;
+	    int maxFlowChartStep = 6;
+	    TextView stepNumber;
+    	
+	    // calendar
+	    boolean available;
+	    boolean scheduled;
+	    boolean occupied;
     
 	// OpenGL content view
 	private GLSurfaceView glSurfaceView;
@@ -111,6 +126,8 @@ GestureDetector.OnDoubleTapListener {
 	FrameLayout view;
 	// control panel layout
 	FrameLayout controlview;
+	// control panel for calendar mode
+	FrameLayout calendarview;
 	// sensor layout
 	FrameLayout topview;	
 	// sensor view
@@ -119,6 +136,13 @@ GestureDetector.OnDoubleTapListener {
     FrameLayout locationview;
     // location view
     TextView mLocationData;
+    
+    
+    // check boxes
+    CheckBox check_available;
+    CheckBox check_occupied;
+    CheckBox check_scheduled;
+    
     
     // menus
     private MenuItem locationSet;
@@ -223,7 +247,8 @@ GestureDetector.OnDoubleTapListener {
         topview = (FrameLayout) findViewById(R.id.topview);
         locationview = (FrameLayout) findViewById(R.id.locationview);
         controlview = (FrameLayout) findViewById(R.id.control_overlay);
- 
+        calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
+        
         // code for setting menu items - CY: start
         
         // get the listview
@@ -245,6 +270,18 @@ GestureDetector.OnDoubleTapListener {
         controlview.removeView(fwdButton);
         final Button backButton = (Button) findViewById(R.id.backwardButton);
         controlview.removeView(backButton);
+        
+        check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
+        calendarview.removeView(check_scheduled);
+        check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
+        calendarview.removeView(check_occupied);
+        check_available = (CheckBox) findViewById(R.id.checkbox_available);
+        calendarview.removeView(check_available);
+        available = false;
+	    scheduled = false;
+	    occupied = false;
+        
+        stepNumber = (TextView) findViewById(R.id.flowChartStepView);
         
         menuview.setOnChildClickListener(new OnChildClickListener() {
         	@Override
@@ -269,9 +306,20 @@ GestureDetector.OnDoubleTapListener {
                 	controlview.removeView(backButton);
                 }
                 
+                if (modeStatus == modeCalendar && modeStatus != prevStatus) {
+                	calendarview.addView(check_available);
+                	calendarview.addView(check_scheduled);
+                	calendarview.addView(check_occupied);
+                }
+                else if (modeStatus != modeCalendar && prevStatus == modeCalendar) {
+                	calendarview.removeView(check_available);
+                	calendarview.removeView(check_scheduled);
+                	calendarview.removeView(check_occupied);
+                }
+                
                 return false;
             }
-        });        
+        });
         
         menuview.setOnGroupExpandListener(new OnGroupExpandListener() {
         	@Override
@@ -280,6 +328,49 @@ GestureDetector.OnDoubleTapListener {
         	}
         	
         });
+        
+        // set check function
+        check_available.setOnCheckedChangeListener(new OnCheckedChangeListener () {
+			@Override
+			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+				if (arg1) {
+					Toast.makeText(calendarview.getContext(), "Available Checked", Toast.LENGTH_SHORT).show();
+					available = true;
+				}
+				else {
+					Toast.makeText(calendarview.getContext(), "Available Unchecked", Toast.LENGTH_SHORT).show();
+					available = false;
+				}				
+			}
+		});
+        
+        check_occupied.setOnCheckedChangeListener(new OnCheckedChangeListener () {
+			@Override
+			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+				if (arg1) {
+					Toast.makeText(calendarview.getContext(), "Occupied Checked", Toast.LENGTH_SHORT).show();
+					occupied = true;
+				}
+				else {
+					Toast.makeText(calendarview.getContext(), "Occupied Unchecked", Toast.LENGTH_SHORT).show();
+					occupied = false;
+				}				
+			}
+		});
+        
+        check_scheduled.setOnCheckedChangeListener(new OnCheckedChangeListener () {
+			@Override
+			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+				if (arg1) {
+					Toast.makeText(calendarview.getContext(), "Scheduled Checked", Toast.LENGTH_SHORT).show();
+					scheduled = true;
+				}
+				else {
+					Toast.makeText(calendarview.getContext(), "Scheduled Unchecked", Toast.LENGTH_SHORT).show();
+					scheduled = false;
+				}				
+			}
+		});
         
         // code for setting menu items - CY: end
         
@@ -759,9 +850,19 @@ GestureDetector.OnDoubleTapListener {
 	    public void myButtonClickHandler(View view) {
 	        switch (view.getId()) {
 	        case R.id.forwardButton:
+	        	if (currentStep < maxFlowChartStep)
+	        		currentStep++;
+	        	else
+	        		currentStep = 1;	        	
+	        	//stepNumber.setText("Step: " + currentStep);
 	        	Toast.makeText(this, "Forward Button Clicked", Toast.LENGTH_SHORT).show();
 	            break;
 	        case R.id.backwardButton:
+	        	if (currentStep > 1)
+	        		currentStep--;
+	        	else
+	        		currentStep = maxFlowChartStep;
+	        	//stepNumber.setText("Step: " + currentStep);
 	        	Toast.makeText(this, "Backward Button Clicked", Toast.LENGTH_SHORT).show();
 	            break;
 	        case R.id.showButton:
