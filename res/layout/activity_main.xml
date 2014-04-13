@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
@@ -7,8 +7,7 @@
 
     <FrameLayout 
         android:layout_width="fill_parent"
-        android:layout_height="0dip"
-        android:layout_weight="0.59">
+        android:layout_height="fill_parent">
 	    <FrameLayout
 	        android:id="@+id/camera_preview"
 	        android:layout_width="fill_parent"
@@ -32,34 +31,39 @@
 	    	tools:context="com.example.augmentedreality.ARVIsionActivity" />
     </FrameLayout>
 
-    <LinearLayout style="?android:attr/buttonBarStyle"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal" 
-        android:background="#000000">
-	    <Button style="?android:attr/buttonBarButtonStyle"
-	        android:id="@+id/wmode"
-	        android:layout_width="0dip"
-	        android:layout_height="wrap_content"
-	        android:layout_weight="1"
-	        android:text="World Mode" 
-	        android:onClick="setWorldMode"/>
-	        
-    	<Button style="?android:attr/buttonBarButtonStyle"
-	        android:id="@+id/appmode"
-	        android:layout_width="0dip"
-	        android:layout_height="wrap_content"
-	        android:layout_weight="1"
-	        android:text="Apprentice Mode" 
-	        android:onClick="setApprenticeMode"/>
+    <ExpandableListView
+       	android:id="@+id/expandableListView"
+       	android:layout_width="match_parent"
+       	android:layout_height="wrap_content"
+       	android:background="#000000"
+       	android:alpha="1" >
+   	</ExpandableListView>    	
     
-    	<Button style="?android:attr/buttonBarButtonStyle"
-	        android:id="@+id/vmode"
-	        android:layout_width="0dip"
-	        android:layout_height="wrap_content"
-	        android:layout_weight="1"
-	        android:text="Visitor Mode"
-	        android:onClick="setVisitorMode" />
-    </LinearLayout>
+	<FrameLayout
+	    android:id="@+id/calendar_control_overlay"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent">
+
+		<CheckBox
+		    android:id="@+id/checkbox_scheduled"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="Scheduled Soon"
+		    android:layout_gravity="bottom|left" />
+		<CheckBox
+		    android:id="@+id/checkbox_occupied"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="Occupied"		    
+		    android:layout_gravity="bottom|left"
+		    android:layout_marginBottom="40dp" />
+		<CheckBox
+		    android:id="@+id/checkbox_available"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="Available"
+		    android:layout_gravity="bottom|left"
+		    android:layout_marginBottom="80dp" />
+    </FrameLayout>
     
-</LinearLayout>
+</RelativeLayout>

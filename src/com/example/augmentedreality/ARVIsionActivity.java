@@ -6,6 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -44,6 +47,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.ExpandableListView.OnGroupExpandListener;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -53,6 +62,18 @@ import com.example.detection.DetectionBasedTracker;
 import com.example.openglbasics.R;
 
 public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener {
+	
+	// expandable list view for menu	
+	ExpandableListAdapter listAdapter;
+	ExpandableListView menuview;
+    List<String> listDataHeader;
+    HashMap<String, List<String>> listDataChild;
+    enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
+	int modeStatus;
+    
+    // calendar
+    boolean available, scheduled, occupied;
+	    
 	// OpenGL content view
 	private GLSurfaceView glSurfaceView;
 	private boolean rendererSet = false;
@@ -71,17 +92,20 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	
 	// OpenGL layout
 	FrameLayout view;
+	// control panel for calendar mode
+	FrameLayout calendarview;
     // Loading text
     TextView mLoadingText;
-        
+    
+    // check boxes
+    CheckBox check_available, check_occupied, check_scheduled;
+    
     SectionsPagerAdapter mSectionsPagerAdapter;
 	ViewPager mViewPager;
 	
 	// sensors
     private SensorManager mSensMan;
-    static public float mAzimuth;
-    static public float roll;
-    static public float pitch;
+    static public float mAzimuth, roll, pitch;
 
     private float[] mGravs = new float[3];
     private float[] mGeoMags = new float[3];
@@ -102,8 +126,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	double dy = 0.0;
 	double dz = 0.0;
 	boolean fetchLocationFirstAttempt = true;
-	
-	public static int mode = 0; // World
 	
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -145,7 +167,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // keep screen on and set the layout
         
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
@@ -153,6 +174,136 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         mLoadingText = (TextView) findViewById(R.id.loading_text);
         
+        /////////
+        calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
+        
+        // code for setting menu items - CY: start
+        
+        // get the listview
+        menuview = (ExpandableListView) findViewById(R.id.expandableListView);
+        // preparing list data
+        prepareListData();
+        listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild); 
+        // setting list adapter
+        menuview.setAdapter(listAdapter);        
+        modeStatus = modes.modeWorld.ordinal();
+                
+        check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
+        check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
+        check_available = (CheckBox) findViewById(R.id.checkbox_available);
+        available = false;
+	    scheduled = false;
+	    occupied = false;
+	    calendarview.setVisibility(View.INVISIBLE);
+        
+        menuview.setOnChildClickListener(new OnChildClickListener() {
+        	@Override
+            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+        		
+        		modeStatus = childPosition;
+                Toast.makeText(getApplicationContext(), listDataHeader.get(groupPosition)+" : "+listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition), 
+                		Toast.LENGTH_SHORT).show();
+                
+                if (modeStatus == modes.modeWorld.ordinal()) {
+                	if (!rendererSet) {
+            			view.addView(glSurfaceView);
+            			rendererSet = true;
+                	}
+                	mViewPager.setVisibility(View.INVISIBLE);
+        			calendarview.setVisibility(View.INVISIBLE);
+                }
+                else if (modeStatus == modes.modeVisitor.ordinal()) {
+                	if (rendererSet) {
+            			view.removeView(glSurfaceView);
+            			rendererSet = false;
+                	}
+                	mViewPager.setVisibility(View.VISIBLE);
+        			mViewPager.setCurrentItem(0);
+            		calendarview.setVisibility(View.INVISIBLE);
+                }                
+                else if (modeStatus == modes.modeApprentice.ordinal()) {
+                	if (rendererSet) {
+            			view.removeView(glSurfaceView);
+            			rendererSet = false;            			
+                	}  
+                	mViewPager.setVisibility(View.VISIBLE);
+        			mViewPager.setCurrentItem(0);
+            		calendarview.setVisibility(View.INVISIBLE);
+                }
+                else if (modeStatus == modes.modeCalendar.ordinal()) {
+                	if (!rendererSet) {
+            			view.addView(glSurfaceView);
+            			rendererSet = true;
+                	}
+                	mViewPager.setVisibility(View.INVISIBLE);
+                	calendarview.setVisibility(View.INVISIBLE);
+        			calendarview.setVisibility(View.VISIBLE);
+        			calendarview.bringToFront();
+                }
+                else if (modeStatus == modes.modeNavigation.ordinal()) {
+                	if (!rendererSet) {
+            			view.addView(glSurfaceView);
+            			rendererSet = true;
+                	}
+                	mViewPager.setVisibility(View.INVISIBLE);
+        			calendarview.setVisibility(View.INVISIBLE);
+                }
+                menuview.collapseGroup(groupPosition);
+                return true;
+            }
+        });
+        
+        menuview.setOnGroupExpandListener(new OnGroupExpandListener() {
+        	@Override
+        	public void onGroupExpand (int groupPosition) {
+        		//listDataHeader.set(groupPosition, "Mode Selection");
+        	}
+        });
+        
+        // set check function
+        check_available.setOnCheckedChangeListener(new OnCheckedChangeListener () {
+			@Override
+			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+				if (arg1) {
+					Toast.makeText(calendarview.getContext(), "Available Checked", Toast.LENGTH_SHORT).show();
+					available = true;
+				}
+				else {
+					Toast.makeText(calendarview.getContext(), "Available Unchecked", Toast.LENGTH_SHORT).show();
+					available = false;
+				}				
+			}
+		});
+        
+        check_occupied.setOnCheckedChangeListener(new OnCheckedChangeListener () {
+			@Override
+			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+				if (arg1) {
+					Toast.makeText(calendarview.getContext(), "Occupied Checked", Toast.LENGTH_SHORT).show();
+					occupied = true;
+				}
+				else {
+					Toast.makeText(calendarview.getContext(), "Occupied Unchecked", Toast.LENGTH_SHORT).show();
+					occupied = false;
+				}				
+			}
+		});
+        
+        check_scheduled.setOnCheckedChangeListener(new OnCheckedChangeListener () {
+			@Override
+			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+				if (arg1) {
+					Toast.makeText(calendarview.getContext(), "Scheduled Checked", Toast.LENGTH_SHORT).show();
+					scheduled = true;
+				}
+				else {
+					Toast.makeText(calendarview.getContext(), "Scheduled Unchecked", Toast.LENGTH_SHORT).show();
+					scheduled = false;
+				}				
+			}
+		});
+        
+        ////////
         initCamera();
 
         // Initiate the Sensor Manager and register this as Listener for the required sensor types:
@@ -307,35 +458,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         // Do nothing
     }
 
-	public void setWorldMode(View arg) {
-		if (!rendererSet) {
-			view.addView(glSurfaceView);
-			rendererSet = true;
-			mViewPager.setVisibility(View.INVISIBLE);
-    	}
-		mode = 0;
-	}
-	
-	public void setVisitorMode(View arg) {
-		if (rendererSet) {
-			view.removeView(glSurfaceView);
-			rendererSet = false;
-			mViewPager.setVisibility(View.VISIBLE);
-    	}
-		mViewPager.setCurrentItem(0);
-		mode = 1;
-	}
-
-	public void setApprenticeMode(View arg) {
-		if (rendererSet) {
-			view.removeView(glSurfaceView);
-			rendererSet = false;
-			mViewPager.setVisibility(View.VISIBLE);
-    	}
-		mViewPager.setCurrentItem(0);
-		mode = 2;
-	}
-
 	private void initGl() {
         renderer = new ARVisionRenderer(this);
         glSurfaceView = new GLSurfaceView(this);
@@ -464,28 +586,33 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 			
 			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
 			
-			//if (mode == 0) 
-			{
-				if (sectionNum == 1)
-					imgView.setImageResource(R.drawable.product1);
-				else if (sectionNum == 2)
-					imgView.setImageResource(R.drawable.product2);
-				else if (sectionNum == 3)
-					imgView.setImageResource(R.drawable.product3);
-				else if (sectionNum == 4)
-					imgView.setImageResource(R.drawable.product4);
-			} 
-			/*else if (mode == 1) {
-				if (sectionNum == 1)
-					imgView.setImageResource(R.drawable.product1);
-				else if (sectionNum == 2)
-					imgView.setImageResource(R.drawable.product2);
-				else if (sectionNum == 3)
-					imgView.setImageResource(R.drawable.product3);
-				else if (sectionNum == 4)
-					imgView.setImageResource(R.drawable.product4);
-			}*/
+			if (sectionNum == 1)
+				imgView.setImageResource(R.drawable.product1);
+			else if (sectionNum == 2)
+				imgView.setImageResource(R.drawable.product2);
+			else if (sectionNum == 3)
+				imgView.setImageResource(R.drawable.product3);
+			else if (sectionNum == 4)
+				imgView.setImageResource(R.drawable.product4);
 			return rootView;
 		}
 	}
+	
+	private void prepareListData() {
+        listDataHeader = new ArrayList<String>();
+        listDataChild = new HashMap<String, List<String>>();
+ 
+        // Adding child data
+        listDataHeader.add("Mode Selection");
+ 
+        // Adding child data
+        List<String> modegroup = new ArrayList<String>();
+        modegroup.add("World");
+        modegroup.add("Visitor");
+        modegroup.add("Apprentice");
+        modegroup.add("Navigation");
+        modegroup.add("Calendar");
+ 
+        listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
+    }
 }
