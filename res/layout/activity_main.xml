@@ -5,27 +5,40 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <FrameLayout
-        android:id="@+id/camera_preview"
+    <FrameLayout 
         android:layout_width="fill_parent"
         android:layout_height="0dip"
         android:layout_weight="0.59">
+	    <FrameLayout
+	        android:id="@+id/camera_preview"
+	        android:layout_width="fill_parent"
+	        android:layout_height="fill_parent" >
+	    </FrameLayout>
+	    
+	    <TextView
+	        android:id="@+id/loading_text"
+	        android:layout_height="wrap_content"
+	        android:layout_width="wrap_content"
+	        android:text="Loading..."
+	        android:textColor="#ffffff"
+	        android:layout_gravity="center"
+	        android:textSize="60sp"> 
+	    </TextView>
     </FrameLayout>
-    
             
-    <FrameLayout
+    <TextView
         android:id="@+id/locationview"
         android:layout_width="match_parent"
         android:layout_height="32dp" >
 
-    </FrameLayout>
+    </TextView>
     
-    <FrameLayout
-        android:id="@+id/topview"
+    <TextView
+        android:id="@+id/sensorview"
         android:layout_width="match_parent"
         android:layout_height="16dp" >
 
-    </FrameLayout>
+    </TextView>
 
 
 </LinearLayout>

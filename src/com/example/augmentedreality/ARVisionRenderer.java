@@ -156,7 +156,6 @@ public class ARVisionRenderer implements Renderer {
 		
 		// initialize transformation matrices
 		initMatrices();
-
 		
 		objectType = new int [numObjects];
 		objectTexture = new int [numObjects];

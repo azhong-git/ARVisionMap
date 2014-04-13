@@ -24,10 +24,7 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
 
 import android.app.Activity;
 import android.content.Context;
@@ -38,13 +35,11 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.support.v4.view.GestureDetectorCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -53,8 +48,7 @@ import android.widget.Toast;
 import com.example.detection.DetectionBasedTracker;
 import com.example.openglbasics.R;
 
-public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, GestureDetector.OnGestureListener,
-GestureDetector.OnDoubleTapListener {
+public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener {
 	// OpenGL content view
 	private GLSurfaceView glSurfaceView;
 	private boolean rendererSet = false;
@@ -65,43 +59,23 @@ GestureDetector.OnDoubleTapListener {
 	// Back camera
 	private int mCameraIndex = 0;
 	
-	// OpenCV objection detection
-	private static final Scalar FONT_COLOR = new Scalar (0, 76, 253, 10);
-	private static final Scalar MENU_COLOR = new Scalar (255, 0, 125, 100);
-	
+	// OpenCV objection detection	
 	private Mat mRgba;
 	private Mat mGray;
 	private File mCascadeFile;
 	private static final String TAG = "ARVision::Activity";
-    private int x3, midx, xx;
-    private int y3, midy;
 	
 	// OpenGL layout
 	FrameLayout view;
-	// sensor layout
-	FrameLayout topview;	
 	// sensor view
     TextView mOrientationData;
-    // location layout
-    FrameLayout locationview;
     // location view
     TextView mLocationData;
+    // Loading text
+    TextView mLoadingText;
     
-    // menus
-    private MenuItem locationSet;
-    private int locationType = 0;
-    private String [] locationSetOrNot = new String [2];
-    
-    private MenuItem touchEnable;
-    private int touchType = 0;
-    private String [] touchSetOrNot = new String [2];
-    private String note = "no action";
-    private static final String DEBUG_TAG = "Gestures";
-    private GestureDetectorCompat mDetector; 
-    
-    private MenuItem moveSelect;
-    private int moveType = 0;
-    private String [] moveCameraOrObject = new String [2];
+    // Menu
+    private MenuItem mWorldMode, mVisitorMode, mApprenticeMode;
     
 	// sensors
     private SensorManager mSensMan;
@@ -170,31 +144,16 @@ GestureDetector.OnDoubleTapListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // keep screen on and set the layout
-        locationSetOrNot[0] = "Enable location";
-        locationSetOrNot[1] = "Disable location";
-        touchSetOrNot[0] = "Enable touch";
-        touchSetOrNot[1] = "Disable touch";
-        moveCameraOrObject[0] = "Move Object";
-        moveCameraOrObject[1] = "Move Camera";
-
-        mDetector = new GestureDetectorCompat(this,this);
-        mDetector.setOnDoubleTapListener(this);
-
+        
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
 
         view = (FrameLayout) findViewById(R.id.camera_preview);           
-        topview = (FrameLayout) findViewById(R.id.topview);
-        locationview = (FrameLayout) findViewById(R.id.locationview);
+        mOrientationData = (TextView) findViewById(R.id.sensorview);
+        mLocationData = (TextView) findViewById(R.id.locationview);
+        mLoadingText = (TextView) findViewById(R.id.loading_text);
         
         initCamera();
-
-
-        mOrientationData = new TextView(this); // add the sensor orientation data
-        topview.addView(mOrientationData);
-
-        mLocationData = new TextView(this);
-        locationview.addView(mLocationData);
 
         // Initiate the Sensor Manager and register this as Listener for the required sensor types:
 		// TODO: Find how to get a SensorManager outside an Activity, to implement as a utility class.
@@ -207,6 +166,8 @@ GestureDetector.OnDoubleTapListener {
                 SensorManager.SENSOR_DELAY_GAME); // TODO to change it to SENSOR_DELAY_NORMAL
 
         initGl();  // initialize OpenGL view
+        timer = new Timer();
+        timer.schedule(task, 0l, 10000l);        
     }
 
     @Override
@@ -217,7 +178,6 @@ GestureDetector.OnDoubleTapListener {
     	}
         if (mCameraView != null)
             mCameraView.disableView();
-    	
     }
 
     @Override
@@ -238,17 +198,12 @@ GestureDetector.OnDoubleTapListener {
             mCameraView.disableView();
     }
     
-
     
     public void onCameraViewStarted(int width, int height) {
         mGray = new Mat();
         mRgba = new Mat();
-        xx = 100;
-        x3 = 400;
-        y3 = 240;
-        midx = 400;
-        midy = 240;
     }
+    
 
     public void onCameraViewStopped() {
         mGray.release();
@@ -258,23 +213,29 @@ GestureDetector.OnDoubleTapListener {
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
     	mRgba = inputFrame.rgba();
     	mGray = inputFrame.gray();
-    	if (touchType == 1) {
-    		if (moveType == 0)
-    			Core.putText(mRgba, "Move camera", new Point(midx-x3, midy+y3), 0, 1.25, MENU_COLOR, 2);
-    		else
-    			Core.putText(mRgba, "Move object", new Point(midx-x3, midy+y3), 0, 1.25, MENU_COLOR, 2);	
-    	}
-    	
-        if (ARVisionRenderer.GLStatus == ARVisionRenderer.GraphicsStatus.Loading)
-        	Core.putText(mRgba, "Loading...", new Point(midx-xx, midy), 0, 1.5, FONT_COLOR, 2);
+    	    	
+        if (ARVisionRenderer.GLStatus == ARVisionRenderer.GraphicsStatus.Loading) {
+        	runOnUiThread(new Runnable() {
+				@Override
+				public void run() {						
+					mLoadingText.setVisibility(View.VISIBLE);				
+				}
+			});
+        }
+        else {
+        	runOnUiThread(new Runnable() {
+				@Override
+				public void run() {						
+					mLoadingText.setVisibility(View.INVISIBLE);				
+				}
+			});
+        }
         return mRgba;
     }
-    
-    
+        
     private void initCamera() {
     	mCameraView = new JavaCameraView(this, mCameraIndex);
     	mCameraView.setCvCameraViewListener(this);
-//    	mCameraView.setMaxFrameSize(640,480);
     	view.addView(mCameraView);
     }
     
@@ -290,32 +251,22 @@ GestureDetector.OnDoubleTapListener {
         }
 
         if (SensorManager.getRotationMatrix(mRotationM, null, mGravs,mGeoMags)){
-        		//Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        		//final int rotation = display.getRotation();
-        		{
-        			SensorManager.remapCoordinateSystem(mRotationM, SensorManager.AXIS_X,
-        					SensorManager.AXIS_Z, mRemapedRotationM);
-        		}
-        		/*else if (rotation == Surface.ROTATION_90) {
-        			SensorManager.remapCoordinateSystem(mRotationM, SensorManager.AXIS_Z,
-        					SensorManager.AXIS_MINUS_Y, mRemapedRotationM);
-        		}*/
-        		SensorManager.getOrientation(mRemapedRotationM, mOrientation);
-                onSuccess();
-                if (rendererSet) {
-                	glSurfaceView.queueEvent(new Runnable() {
-                		@Override
-                		public void run () {
-                			if (locationType == 0)
-                				renderer.sensorUpdate(mAzimuth, roll, pitch, 0, 0, 0);
-                			else
-                				renderer.sensorUpdate(mAzimuth, roll, pitch, dx, dy, dz);
-                		}
-                	});
-                }
+        	SensorManager.remapCoordinateSystem(mRotationM, SensorManager.AXIS_X,
+    					SensorManager.AXIS_Z, mRemapedRotationM);
+    		SensorManager.getOrientation(mRemapedRotationM, mOrientation);
+            onSuccess();
+            if (rendererSet) {
+            	glSurfaceView.queueEvent(new Runnable() {
+            		@Override
+            		public void run () {
+            			renderer.sensorUpdate(mAzimuth, roll, pitch, dx, dy, dz);
+            		}
+            	});
+            }
         }
         else onFailure();
     }
+    
 
     void onSuccess(){
         if (mFailed) mFailed = false;
@@ -325,7 +276,7 @@ GestureDetector.OnDoubleTapListener {
         mAzimuth = (mAzimuth+360)%360; // alternative: mAzimuth = mAzimuth>=0 ? mAzimuth : mAzimuth+360;
         pitch = (float) Math.round((Math.toDegrees(mOrientation[1])) *2)/2;
         roll = (float) Math.round((Math.toDegrees(mOrientation[2])) *2)/2;
-        mOrientationData.setText("Azimuth= " + mAzimuth + " Pitch=" + pitch + " Roll=" + roll + "; Action: " + note);
+        mOrientationData.setText("Azimuth= " + mAzimuth + " Pitch=" + pitch + " Roll=" + roll);
         sensorAvailable = true;
 	}
 
@@ -347,38 +298,43 @@ GestureDetector.OnDoubleTapListener {
         }
 	}
 	
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // Do nothing
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-    	locationSet = menu.add(locationSetOrNot[locationType]);
-    	touchEnable = menu.add(touchSetOrNot[touchType]);
-    	moveSelect = menu.add(moveCameraOrObject[moveType]);
+    	mWorldMode = menu.add("World Mode");
+    	mVisitorMode = menu.add("Visitor Mode");
+    	mApprenticeMode = menu.add("Apprentice Mode");
     	return true;
     }
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-    	if (item == locationSet) {
-    		locationType = (locationType + 1) % 2;
-    		if (locationType == 1) {
-    			timer = new Timer();
-    			timer.schedule(task, 0l, 10000l);
-    		}
-    		item.setTitle(locationSetOrNot[locationType]);
+
+    	if (item == mWorldMode) {
+    		if (!rendererSet) {
+    			view.addView(glSurfaceView);
+    			rendererSet = true;
+        	}
     	}
-    	else if (item == touchEnable) {
-    		touchType = (touchType + 1) % 2;
-    		item.setTitle(touchSetOrNot[touchType]);
+    	else if (item == mVisitorMode) {
+    		if (rendererSet) {
+    			view.removeView(glSurfaceView);
+    			rendererSet = false;
+        	}
     	}
-    	else if (item == moveSelect) {
-    		moveType = (moveType + 1) % 2;
-    		item.setTitle(moveCameraOrObject[moveType]);
+    	else if (item == mApprenticeMode) {
+    		if (rendererSet) {
+    			view.removeView(glSurfaceView);
+    			rendererSet = false;
+        	}
     	}
     	return true;
     }
+    
     
 	public DisplayMetrics getDimensions(){
 		DisplayMetrics metrics = new DisplayMetrics();
@@ -386,7 +342,8 @@ GestureDetector.OnDoubleTapListener {
 		return metrics;
 	} 
     
-    private void initGl() {
+    
+	private void initGl() {
         renderer = new ARVisionRenderer(this);
         glSurfaceView = new GLSurfaceView(this);
         final boolean supportsEs2 = true;
@@ -406,130 +363,9 @@ GestureDetector.OnDoubleTapListener {
         
         view.addView(glSurfaceView);
     }
-
-	@Override 
-    public boolean onTouchEvent(MotionEvent event){ 
-        this.mDetector.onTouchEvent(event);
-        
-        return super.onTouchEvent(event);
-    }
-
-    @Override
-    public boolean onDown(MotionEvent event) { 
-        Log.d(DEBUG_TAG,"onDown: " + event.toString()); 
-        if (touchType == 0)
-        	note = "touch disabled";
-        else
-        	note = "down";
-        return true;
-    }
-
-    @Override
-    public boolean onFling(MotionEvent event1, MotionEvent event2, 
-            final float velocityX, final float velocityY) {
-        Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
-        if (touchType == 0)
-        	note = "touch disabled";
-        else {
-        	note = "fling" + " X: "+ velocityX + " Y: " + velocityY;
-        	if (rendererSet) {
-            	glSurfaceView.queueEvent(new Runnable() {
-            		@Override
-            		public void run () {	            			
-                		renderer.moveCamera(velocityX/8000.0f, velocityY/8000.0f);
-            		}
-            	});
-            }
-        	
-        }
-        return true;
-    }
-
-    @Override
-    public void onLongPress(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onLongPress: " + event.toString()); 
-        if (touchType == 0)
-        	note = "touch disabled";
-        else {
-        	note = "long press";
-        	if (rendererSet) {
-        		final float normalizedX = (event.getX() / (float) getDimensions().widthPixels) * 2- 1;
-        		final float normalizedY = -((event.getY() / (float) getDimensions().heightPixels) * 2 -1);
-        		note = note + " X: " + normalizedX + " Y: " + normalizedY;
-            	glSurfaceView.queueEvent(new Runnable() {
-            		@Override
-            		public void run () {	            			
-            			renderer.setObject(0, (float) ((mAzimuth - normalizedX)%360), -pitch+normalizedY*5f, roll);
-            		}
-            	});
-            }	        	
-        }
-    }
-
-    @Override
-    public boolean onScroll(MotionEvent e1, MotionEvent e2, final float distanceX,
-            final float distanceY) {
-        Log.d(DEBUG_TAG, "onScroll: " + e1.toString()+e2.toString());
-        if (touchType == 0)
-        	note = "touch disabled";
-        else {
-        	note = "scroll" + " X: "+distanceX + " Y: "+distanceY;
-
-        }
-        return true;
-    }
-
-    @Override
-    public void onShowPress(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onShowPress: " + event.toString());
-        if (touchType == 0)
-        	note = "touch disabled";
-        else
-        	note = "show press";
-    }
-
-    @Override
-    public boolean onSingleTapUp(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onSingleTapUp: " + event.toString());
-        if (touchType == 0)
-        	note = "touch disabled";
-        else
-        	note = "single tap";
-        return true;
-    }
-
-    @Override
-    public boolean onDoubleTap(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onDoubleTap: " + event.toString());
-        if (touchType == 0)
-        	note = "touch disabled";
-        else
-        	note = "double tap";
-        return true;
-    }
-
-    @Override
-    public boolean onDoubleTapEvent(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onDoubleTapEvent: " + event.toString());
-        if (touchType == 0)
-        	note = "touch disabled";
-        else
-        	note = "double tap event";
-        return true;
-    }
-
-    @Override
-    public boolean onSingleTapConfirmed(MotionEvent event) {
-        Log.d(DEBUG_TAG, "onSingleTapConfirmed: " + event.toString());
-        if (touchType == 0)
-        	note = "touch disabled";
-        else
-        	note = "single tap";
-        return true;
-    }  
     
     public void updateLocationResults(String locationString) {
-    	Toast.makeText(this, "Location Fetched: " + locationString, Toast.LENGTH_SHORT).show();
+    	// Toast.makeText(this, "Location Fetched: " + locationString, Toast.LENGTH_SHORT).show();
     	int delim = locationString.indexOf(',');
     	if (delim == -1)
     		return;
@@ -554,10 +390,7 @@ GestureDetector.OnDoubleTapListener {
         	glSurfaceView.queueEvent(new Runnable() {
         		@Override
         		public void run () {
-        			if (locationType == 0)
-            			renderer.sensorUpdate(mAzimuth, roll, pitch, 0, 0, 0);
-        			else
-        				renderer.sensorUpdate(mAzimuth, roll, pitch, dx, dy, dz);
+        			renderer.sensorUpdate(mAzimuth, roll, pitch, dx, dy, dz);
         		}
         	});
         }
