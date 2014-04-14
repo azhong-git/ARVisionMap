@@ -40,7 +40,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.support.v13.app.FragmentPagerAdapter;
+import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -101,6 +101,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     CheckBox check_available, check_occupied, check_scheduled;
     
     SectionsPagerAdapter mSectionsPagerAdapter;
+    SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
 	
 	// sensors
@@ -177,7 +178,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         /////////
         calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
         
-        // code for setting menu items - CY: start
         
         // get the listview
         menuview = (ExpandableListView) findViewById(R.id.expandableListView);
@@ -196,6 +196,12 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	    occupied = false;
 	    calendarview.setVisibility(View.INVISIBLE);
         
+	    mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
+        mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
+		mViewPager = (ViewPager) findViewById(R.id.pager);
+		//mViewPager.setAdapter(mSectionsPagerAdapter);
+		mViewPager.setVisibility(View.INVISIBLE);
+		
         menuview.setOnChildClickListener(new OnChildClickListener() {
         	@Override
             public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
@@ -217,6 +223,8 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
             			view.removeView(glSurfaceView);
             			rendererSet = false;
                 	}
+                	mSectionsPagerAdapter.notifyDataSetChanged();
+                	mViewPager.setAdapter(mSectionsPagerAdapter);                	
                 	mViewPager.setVisibility(View.VISIBLE);
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
@@ -225,7 +233,8 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
                 	if (rendererSet) {
             			view.removeView(glSurfaceView);
             			rendererSet = false;            			
-                	}  
+                	}
+                	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
                 	mViewPager.setVisibility(View.VISIBLE);
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
@@ -319,11 +328,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         initGl();  // initialize OpenGL view
         timer = new Timer();
         timer.schedule(task, 0l, 10000l);   
-        
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
-		mViewPager = (ViewPager) findViewById(R.id.pager);
-		mViewPager.setAdapter(mSectionsPagerAdapter);
-		mViewPager.setVisibility(View.INVISIBLE);
     }
 
     @Override
@@ -546,7 +550,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 		}	
 	};
 	
-	public class SectionsPagerAdapter extends FragmentPagerAdapter {
+	public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
 
 		public SectionsPagerAdapter(FragmentManager fm) {
 			super(fm);
@@ -559,7 +563,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 
 		@Override
 		public int getCount() {
-			return 4;
+			return 5;
 		}
 	}
 
@@ -594,9 +598,61 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 				imgView.setImageResource(R.drawable.product3);
 			else if (sectionNum == 4)
 				imgView.setImageResource(R.drawable.product4);
+			else if (sectionNum == 5)
+				imgView.setImageResource(R.drawable.product5);
 			return rootView;
 		}
 	}
+	
+	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
+
+		public SectionsPagerAdapterApprentice(FragmentManager fm) {
+			super(fm);
+		}
+
+		@Override
+		public Fragment getItem(int position) {
+			return PlaceholderFragmentApprentice.newInstance(position + 1);
+		}
+
+		@Override
+		public int getCount() {
+			return 3;
+		}
+	}
+
+	public static class PlaceholderFragmentApprentice extends Fragment {
+		private static final String ARG_SECTION_NUMBER = "section_number";
+
+		public static PlaceholderFragmentApprentice newInstance(int sectionNumber) {
+			PlaceholderFragmentApprentice fragment = new PlaceholderFragmentApprentice();
+			Bundle args = new Bundle();
+			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
+			fragment.setArguments(args);
+			return fragment;
+		}
+
+		public PlaceholderFragmentApprentice() {
+		}
+
+		@Override
+		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+			View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+			int sectionNum = getArguments().getInt(ARG_SECTION_NUMBER);
+			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
+			textView.setText(Integer.toString(sectionNum));
+			
+			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
+			
+			if (sectionNum == 1)
+				imgView.setImageResource(R.drawable.step1);
+			else if (sectionNum == 2)
+				imgView.setImageResource(R.drawable.step2);
+			else if (sectionNum == 3)
+				imgView.setImageResource(R.drawable.step3);
+			return rootView;
+		}
+	}	
 	
 	private void prepareListData() {
         listDataHeader = new ArrayList<String>();
