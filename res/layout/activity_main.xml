@@ -1,31 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <FrameLayout
-        android:id="@+id/camera_preview"
+    <FrameLayout 
         android:layout_width="fill_parent"
-        android:layout_height="0dip"
-        android:layout_weight="0.59">
+        android:layout_height="fill_parent">
+	    <FrameLayout
+	        android:id="@+id/camera_preview"
+	        android:layout_width="fill_parent"
+	        android:layout_height="fill_parent" >
+	    </FrameLayout>
+	    
+	    <TextView
+	        android:id="@+id/loading_text"
+	        android:layout_height="wrap_content"
+	        android:layout_width="wrap_content"
+	        android:text="Loading..."
+	        android:textColor="#ffffff"
+	        android:layout_gravity="center"
+	        android:textSize="60sp"> 
+	    </TextView>
+	    
+	    <android.support.v4.view.ViewPager 
+		    android:id="@+id/pager"
+		    android:layout_width="fill_parent"
+		    android:layout_height="fill_parent"
+	    	tools:context="com.example.augmentedreality.ARVIsionActivity" />
+    </FrameLayout>
+
+    <ExpandableListView
+       	android:id="@+id/expandableListView"
+       	android:layout_width="match_parent"
+       	android:layout_height="wrap_content"
+       	android:background="#000000"
+       	android:alpha="1" >
+   	</ExpandableListView>    	
+    
+	<FrameLayout
+	    android:id="@+id/calendar_control_overlay"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent">
+
+		<CheckBox
+		    android:id="@+id/checkbox_scheduled"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="Scheduled Soon"
+		    android:layout_gravity="bottom|left" />
+		<CheckBox
+		    android:id="@+id/checkbox_occupied"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="Occupied"		    
+		    android:layout_gravity="bottom|left"
+		    android:layout_marginBottom="40dp" />
+		<CheckBox
+		    android:id="@+id/checkbox_available"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="Available"
+		    android:layout_gravity="bottom|left"
+		    android:layout_marginBottom="80dp" />
     </FrameLayout>
     
-            
-    <FrameLayout
-        android:id="@+id/locationview"
-        android:layout_width="match_parent"
-        android:layout_height="32dp" >
-
-    </FrameLayout>
-    
-    <FrameLayout
-        android:id="@+id/topview"
-        android:layout_width="match_parent"
-        android:layout_height="16dp" >
-
-    </FrameLayout>
-
-
-</LinearLayout>
+</RelativeLayout>

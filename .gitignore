@@ -4,6 +4,6 @@
 !/.git/
 !/src/
 !/res/
-!/lib/
+!/libs/
 !AndroidManifest.xml
 !.gitignore
