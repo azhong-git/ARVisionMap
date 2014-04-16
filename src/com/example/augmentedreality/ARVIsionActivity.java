@@ -5,8 +5,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -18,11 +20,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -30,12 +27,11 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
 
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
@@ -44,64 +40,40 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.support.v4.view.GestureDetectorCompat;
-import android.util.DisplayMetrics;
+import android.support.v13.app.FragmentStatePagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.Gravity;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
-
-import android.view.Surface;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
-
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ExpandableListView.OnGroupExpandListener;
-import android.widget.ExpandableListView.OnGroupCollapseListener;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.detection.DetectionBasedTracker;
 import com.example.openglbasics.R;
 
-public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, GestureDetector.OnGestureListener,
-GestureDetector.OnDoubleTapListener {
+public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener {
+	
 	// expandable list view for menu	
 	ExpandableListAdapter listAdapter;
 	ExpandableListView menuview;
     List<String> listDataHeader;
     HashMap<String, List<String>> listDataChild;
-    int modeStatus;  
-	
-    // mode
-    final int modeVisitor = 0;
-    final int modeApprentice = 1;
-    final int modeNavigation = 2;
-    final int modeCalendar = 3;
-       
-    // control variables
-
-    	// flow chart
-	    int currentStep = 1;
-	    int maxFlowChartStep = 6;
-	    TextView stepNumber;
-    	
-	    // calendar
-	    boolean available;
-	    boolean scheduled;
-	    boolean occupied;
+    enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
+	int modeStatus;
     
+    // calendar
+    boolean available, scheduled, occupied;
+	    
 	// OpenGL content view
 	private GLSurfaceView glSurfaceView;
 	private boolean rendererSet = false;
@@ -112,63 +84,29 @@ GestureDetector.OnDoubleTapListener {
 	// Back camera
 	private int mCameraIndex = 0;
 	
-	// OpenCV objection detection
-	private static final Scalar FONT_COLOR = new Scalar (0, 76, 253, 10);
-	private static final Scalar MENU_COLOR = new Scalar (255, 0, 125, 100);
-	
+	// OpenCV objection detection	
 	private Mat mRgba;
 	private Mat mGray;
 	private File mCascadeFile;
 	private static final String TAG = "ARVision::Activity";
-
-    private float                  mRelativeFaceSize   = 0.5f;
-    private int                    mAbsoluteFaceSize   = 0;
-    private int x1, x2, x3, midx, xx;
-    private int y1, y2, y3, midy, yy;
-    
+	
 	// OpenGL layout
 	FrameLayout view;
-	// control panel layout
-	FrameLayout controlview;
 	// control panel for calendar mode
 	FrameLayout calendarview;
-	// sensor layout
-	FrameLayout topview;	
-	// sensor view
-    TextView mOrientationData;
-    // location layout
-    FrameLayout locationview;
-    // location view
-    TextView mLocationData;
-    
+    // Loading text
+    TextView mLoadingText;
     
     // check boxes
-    CheckBox check_available;
-    CheckBox check_occupied;
-    CheckBox check_scheduled;
+    CheckBox check_available, check_occupied, check_scheduled;
     
-    
-    // menus
-    private MenuItem locationSet;
-    private int locationType = 0;
-    private String [] locationSetOrNot = new String [2];
-    
-    private MenuItem touchEnable;
-    private int touchType = 0;
-    private String [] touchSetOrNot = new String [2];
-    private String note = "no action";
-    private static final String DEBUG_TAG = "Gestures";
-    private GestureDetectorCompat mDetector; 
-    
-    private MenuItem moveSelect;
-    private int moveType = 0;
-    private String [] moveCameraOrObject = new String [2];
-    
+    SectionsPagerAdapter mSectionsPagerAdapter;
+    SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
+	ViewPager mViewPager;
+	
 	// sensors
     private SensorManager mSensMan;
-    static public float mAzimuth;
-    static public float roll;
-    static public float pitch;
+    static public float mAzimuth, roll, pitch;
 
     private float[] mGravs = new float[3];
     private float[] mGeoMags = new float[3];
@@ -235,27 +173,16 @@ GestureDetector.OnDoubleTapListener {
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // keep screen on and set the layout
-        locationSetOrNot[0] = "Enable location";
-        locationSetOrNot[1] = "Disable location";
-        touchSetOrNot[0] = "Enable touch";
-        touchSetOrNot[1] = "Disable touch";
-        moveCameraOrObject[0] = "Move Object";
-        moveCameraOrObject[1] = "Move Camera";
-
-        mDetector = new GestureDetectorCompat(this,this);
-        mDetector.setOnDoubleTapListener(this);
-
+        
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
 
         view = (FrameLayout) findViewById(R.id.camera_preview);           
-        topview = (FrameLayout) findViewById(R.id.topview);
-        locationview = (FrameLayout) findViewById(R.id.locationview);
-        controlview = (FrameLayout) findViewById(R.id.control_overlay);
+        mLoadingText = (TextView) findViewById(R.id.loading_text);
+        
+        /////////
         calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
         
-        // code for setting menu items - CY: start
         
         // get the listview
         menuview = (ExpandableListView) findViewById(R.id.expandableListView);
@@ -264,66 +191,79 @@ GestureDetector.OnDoubleTapListener {
         listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild); 
         // setting list adapter
         menuview.setAdapter(listAdapter);        
-        modeStatus = modeVisitor;
-        /*
-        final Button calButton = new Button(this);
-        calButton.setText("Calendar Button");
-        calButton.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
-        */
-        
-        final Button showButton = (Button) findViewById(R.id.showButton);
-        final Button fwdButton = (Button) findViewById(R.id.forwardButton);
-        controlview.removeView(fwdButton);
-        final Button backButton = (Button) findViewById(R.id.backwardButton);
-        controlview.removeView(backButton);
-        
+        modeStatus = modes.modeWorld.ordinal();
+                
         check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
-        calendarview.removeView(check_scheduled);
         check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
-        calendarview.removeView(check_occupied);
         check_available = (CheckBox) findViewById(R.id.checkbox_available);
-        calendarview.removeView(check_available);
         available = false;
 	    scheduled = false;
 	    occupied = false;
+	    calendarview.setVisibility(View.INVISIBLE);
         
-        stepNumber = (TextView) findViewById(R.id.flowChartStepView);
-        
+	    mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
+        mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
+		mViewPager = (ViewPager) findViewById(R.id.pager);
+		//mViewPager.setAdapter(mSectionsPagerAdapter);
+		mViewPager.setVisibility(View.INVISIBLE);
+		
         menuview.setOnChildClickListener(new OnChildClickListener() {
         	@Override
             public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-        		int prevStatus = modeStatus;
-
+        		
         		modeStatus = childPosition;
-                Toast.makeText(getApplicationContext(), listDataHeader.get(groupPosition)+" : "+listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition) + "(code: " + modeStatus + ")", Toast.LENGTH_SHORT).show();
-                //String mode_string = listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition); 
-                //listDataHeader.set(groupPosition, mode_string);
-                if (modeStatus == modeVisitor && modeStatus != prevStatus)
-                	controlview.addView(showButton);
-                else if (modeStatus != modeVisitor && prevStatus == modeVisitor)
-                	controlview.removeView(showButton);
+                Toast.makeText(getApplicationContext(), listDataHeader.get(groupPosition)+" : "+listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition), 
+                		Toast.LENGTH_SHORT).show();
                 
-                if (modeStatus == modeApprentice && modeStatus != prevStatus) {
-                	controlview.addView(fwdButton);
-                	controlview.addView(backButton);
+                if (modeStatus == modes.modeWorld.ordinal()) {
+                	if (!rendererSet) {
+            			view.addView(glSurfaceView);
+            			rendererSet = true;
+                	}
+                	mViewPager.setVisibility(View.INVISIBLE);
+        			calendarview.setVisibility(View.INVISIBLE);
                 }
-                else if (modeStatus != modeApprentice && prevStatus == modeApprentice) {
-                	controlview.removeView(fwdButton);
-                	controlview.removeView(backButton);
+                else if (modeStatus == modes.modeVisitor.ordinal()) {
+                	if (rendererSet) {
+            			view.removeView(glSurfaceView);
+            			rendererSet = false;
+                	}
+                	mSectionsPagerAdapter.notifyDataSetChanged();
+                	mViewPager.setAdapter(mSectionsPagerAdapter);                	
+                	mViewPager.setVisibility(View.VISIBLE);
+        			mViewPager.setCurrentItem(0);
+            		calendarview.setVisibility(View.INVISIBLE);
+                }                
+                else if (modeStatus == modes.modeApprentice.ordinal()) {
+                	if (rendererSet) {
+            			view.removeView(glSurfaceView);
+            			rendererSet = false;            			
+                	}
+                	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
+                	mViewPager.setVisibility(View.VISIBLE);
+        			mViewPager.setCurrentItem(0);
+            		calendarview.setVisibility(View.INVISIBLE);
                 }
-                
-                if (modeStatus == modeCalendar && modeStatus != prevStatus) {
-                	calendarview.addView(check_available);
-                	calendarview.addView(check_scheduled);
-                	calendarview.addView(check_occupied);
+                else if (modeStatus == modes.modeCalendar.ordinal()) {
+                	if (!rendererSet) {
+            			view.addView(glSurfaceView);
+            			rendererSet = true;
+                	}
+                	mViewPager.setVisibility(View.INVISIBLE);
+                	calendarview.setVisibility(View.INVISIBLE);
+        			calendarview.setVisibility(View.VISIBLE);
+        			calendarview.bringToFront();
                 }
-                else if (modeStatus != modeCalendar && prevStatus == modeCalendar) {
-                	calendarview.removeView(check_available);
-                	calendarview.removeView(check_scheduled);
-                	calendarview.removeView(check_occupied);
+                else if (modeStatus == modes.modeNavigation.ordinal()) {
+                	if (!rendererSet) {
+            			view.addView(glSurfaceView);
+            			rendererSet = true;
+                	}
+                	mViewPager.setVisibility(View.INVISIBLE);
+        			calendarview.setVisibility(View.INVISIBLE);
                 }
-                
-                return false;
+                menuview.collapseGroup(groupPosition);
+                return true;
             }
         });
         
@@ -332,7 +272,6 @@ GestureDetector.OnDoubleTapListener {
         	public void onGroupExpand (int groupPosition) {
         		//listDataHeader.set(groupPosition, "Mode Selection");
         	}
-        	
         });
         
         // set check function
@@ -378,16 +317,8 @@ GestureDetector.OnDoubleTapListener {
 			}
 		});
         
-        // code for setting menu items - CY: end
-        
+        ////////
         initCamera();
-
-
-        mOrientationData = new TextView(this); // add the sensor orientation data
-        topview.addView(mOrientationData);
-
-        mLocationData = new TextView(this);
-        locationview.addView(mLocationData);
 
         // Initiate the Sensor Manager and register this as Listener for the required sensor types:
 		// TODO: Find how to get a SensorManager outside an Activity, to implement as a utility class.
@@ -400,6 +331,8 @@ GestureDetector.OnDoubleTapListener {
                 SensorManager.SENSOR_DELAY_GAME); // TODO to change it to SENSOR_DELAY_NORMAL
 
         initGl();  // initialize OpenGL view
+        timer = new Timer();
+        timer.schedule(task, 0l, 10000l);   
     }
 
     @Override
@@ -410,7 +343,6 @@ GestureDetector.OnDoubleTapListener {
     	}
         if (mCameraView != null)
             mCameraView.disableView();
-    	
     }
 
     @Override
@@ -431,17 +363,12 @@ GestureDetector.OnDoubleTapListener {
             mCameraView.disableView();
     }
     
-
     
     public void onCameraViewStarted(int width, int height) {
         mGray = new Mat();
         mRgba = new Mat();
-        xx = 100;
-        x3 = 400;
-        y3 = 240;
-        midx = 400;
-        midy = 240;
     }
+    
 
     public void onCameraViewStopped() {
         mGray.release();
@@ -451,23 +378,29 @@ GestureDetector.OnDoubleTapListener {
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
     	mRgba = inputFrame.rgba();
     	mGray = inputFrame.gray();
-    	if (touchType == 1) {
-    		if (moveType == 0)
-    			Core.putText(mRgba, "Move camera", new Point(midx-x3, midy+y3), 0, 1.25, MENU_COLOR, 2);
-    		else
-    			Core.putText(mRgba, "Move object", new Point(midx-x3, midy+y3), 0, 1.25, MENU_COLOR, 2);	
-    	}
-    	
-        if (ARVisionRenderer.GLStatus == ARVisionRenderer.GraphicsStatus.Loading)
-        	Core.putText(mRgba, "Loading...", new Point(midx-xx, midy), 0, 1.5, FONT_COLOR, 2);
+    	    	
+        if (ARVisionRenderer.GLStatus == ARVisionRenderer.GraphicsStatus.Loading) {
+        	runOnUiThread(new Runnable() {
+				@Override
+				public void run() {						
+					mLoadingText.setVisibility(View.VISIBLE);				
+				}
+			});
+        }
+        else {
+        	runOnUiThread(new Runnable() {
+				@Override
+				public void run() {						
+					mLoadingText.setVisibility(View.INVISIBLE);	
+				}
+			});
+        }
         return mRgba;
     }
-    
-    
+        
     private void initCamera() {
     	mCameraView = new JavaCameraView(this, mCameraIndex);
     	mCameraView.setCvCameraViewListener(this);
-//    	mCameraView.setMaxFrameSize(640,480);
     	view.addView(mCameraView);
     }
     
@@ -483,32 +416,22 @@ GestureDetector.OnDoubleTapListener {
         }
 
         if (SensorManager.getRotationMatrix(mRotationM, null, mGravs,mGeoMags)){
-        		//Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        		//final int rotation = display.getRotation();
-        		{
-        			SensorManager.remapCoordinateSystem(mRotationM, SensorManager.AXIS_X,
-        					SensorManager.AXIS_Z, mRemapedRotationM);
-        		}
-        		/*else if (rotation == Surface.ROTATION_90) {
-        			SensorManager.remapCoordinateSystem(mRotationM, SensorManager.AXIS_Z,
-        					SensorManager.AXIS_MINUS_Y, mRemapedRotationM);
-        		}*/
-        		SensorManager.getOrientation(mRemapedRotationM, mOrientation);
-                onSuccess();
-                if (rendererSet) {
-                	glSurfaceView.queueEvent(new Runnable() {
-                		@Override
-                		public void run () {
-                			if (locationType == 0)
-                				renderer.sensorUpdate(mAzimuth, roll, pitch, 0, 0, 0);
-                			else
-                				renderer.sensorUpdate(mAzimuth, roll, pitch, dx, dy, dz);
-                		}
-                	});
-                }
+        	SensorManager.remapCoordinateSystem(mRotationM, SensorManager.AXIS_X,
+    					SensorManager.AXIS_Z, mRemapedRotationM);
+    		SensorManager.getOrientation(mRemapedRotationM, mOrientation);
+            onSuccess();
+            if (rendererSet) {
+            	glSurfaceView.queueEvent(new Runnable() {
+            		@Override
+            		public void run () {
+            			renderer.sensorUpdate(mAzimuth, roll, pitch, dx, dy, dz);
+            		}
+            	});
+            }
         }
         else onFailure();
     }
+    
 
     void onSuccess(){
         if (mFailed) mFailed = false;
@@ -518,7 +441,6 @@ GestureDetector.OnDoubleTapListener {
         mAzimuth = (mAzimuth+360)%360; // alternative: mAzimuth = mAzimuth>=0 ? mAzimuth : mAzimuth+360;
         pitch = (float) Math.round((Math.toDegrees(mOrientation[1])) *2)/2;
         roll = (float) Math.round((Math.toDegrees(mOrientation[2])) *2)/2;
-        mOrientationData.setText("Azimuth= " + mAzimuth + " Pitch=" + pitch + " Roll=" + roll + "; Action: " + note);
         sensorAvailable = true;
 	}
 
@@ -535,77 +457,34 @@ GestureDetector.OnDoubleTapListener {
 	void onFailure() {
         if (!mFailed) {
         	mFailed = true;
-            mOrientationData.setText("Failed to retrive rotation Matrix");
+            Toast.makeText(this, "Failed to retrive rotation Matrix", Toast.LENGTH_LONG).show();
             //sensorAvailable = false;
         }
 	}
 	
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // Do nothing
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-    	locationSet = menu.add(locationSetOrNot[locationType]);
-    	touchEnable = menu.add(touchSetOrNot[touchType]);
-    	moveSelect = menu.add(moveCameraOrObject[moveType]);
-    	return true;
-    }
-    
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-    	if (item == locationSet) {
-    		locationType = (locationType + 1) % 2;
-    		if (locationType == 1) {
-    			timer = new Timer();
-    			timer.schedule(task, 0l, timerInterval);
-    		}
-    		item.setTitle(locationSetOrNot[locationType]);
-    	}
-    	else if (item == touchEnable) {
-    		touchType = (touchType + 1) % 2;
-    		item.setTitle(touchSetOrNot[touchType]);
-    	}
-    	else if (item == moveSelect) {
-    		moveType = (moveType + 1) % 2;
-    		item.setTitle(moveCameraOrObject[moveType]);
-    	}
-    	return true;
-    }
-    
-	public DisplayMetrics getDimensions(){
-		DisplayMetrics metrics = new DisplayMetrics();
-		getWindowManager().getDefaultDisplay().getMetrics(metrics);
-		return metrics;
-	} 
-    
     private void initGl() {
         renderer = new ARVisionRenderer(this);
         glSurfaceView = new GLSurfaceView(this);
-        final boolean supportsEs2 = true;
-        if (supportsEs2) {
-        	glSurfaceView.setEGLContextClientVersion(2);
-        	glSurfaceView.setZOrderMediaOverlay(true);
-        	glSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
-        	glSurfaceView.setRenderer(renderer);
-        	glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-        	rendererSet = true;
-        }
-        else {
-        	Toast.makeText(this, "This device does not support OpenGL ES 2.0.",
-        			Toast.LENGTH_LONG).show();
-        	return;
-        }
-        
+    	glSurfaceView.setEGLContextClientVersion(2);
+    	glSurfaceView.setZOrderMediaOverlay(true);
+    	glSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
+    	glSurfaceView.setRenderer(renderer);
+    	glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+    	rendererSet = true;
         view.addView(glSurfaceView);
     }
     
     public void updateLocationResults(String locationString) {
-    	//Toast.makeText(this, "Location Updated: " + locationString, Toast.LENGTH_SHORT).show();   
-		int delim = locationString.indexOf(',');
-		if (delim == -1)
-			return;
-		String latitude = locationString.substring(0, delim-1);
+    	// Toast.makeText(this, "Location Fetched: " + locationString, Toast.LENGTH_SHORT).show();
+    	int delim = locationString.indexOf(',');
+    	if (delim == -1)
+    		return;
+    	String latitude = locationString.substring(0, delim-1);
     	String longitude = locationString.substring(delim+1);
     	if (fetchLocationFirstAttempt) {
     		lon = Double.parseDouble(longitude);
@@ -617,18 +496,11 @@ GestureDetector.OnDoubleTapListener {
     		dx = (Double.parseDouble(latitude) - lat) * METER_PER_LAT;
     	}
 		
-		mLocationData.setText("Latitude: " + latitude
-				+ ", Longitude: " + longitude + "\ndx: " + String.valueOf(dx)
-				+ ", dy: " + String.valueOf(dy) + ", dz: " + String.valueOf(dz));
-		
         if (rendererSet) {
         	glSurfaceView.queueEvent(new Runnable() {
         		@Override
         		public void run () {
-        			if (locationType == 0)
-            			renderer.sensorUpdate(mAzimuth, roll, pitch, 0, 0, 0);
-        			else
-        				renderer.sensorUpdate(mAzimuth, roll, pitch, dx, dy, dz);
+        			renderer.sensorUpdate(mAzimuth, roll, pitch, dx, dy, dz);
         		}
         	});
         }
@@ -684,184 +556,126 @@ GestureDetector.OnDoubleTapListener {
 			return build.toString();
 		}	
 	};
+	
+	public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
 
-//	@Override
-//	public void onProviderDisabled(String provider) {
-//		Toast.makeText(this, "Disabled provider " + provider,
-//		        Toast.LENGTH_SHORT).show();
-//	}
-//
-//	@Override
-//	public void onProviderEnabled(String provider) {
-//		Toast.makeText(this, "Enabled new provider " + provider,
-//		        Toast.LENGTH_SHORT).show();		
-//	}
-//
-//	@Override
-//	public void onStatusChanged(String provider, int status, Bundle extras) {
-//		// TODO Auto-generated method stub
-//		
-//	}
-	 @Override 
-	    public boolean onTouchEvent(MotionEvent event){ 
-	        this.mDetector.onTouchEvent(event);
-	        
-	        return super.onTouchEvent(event);
-	    }
+		public SectionsPagerAdapter(FragmentManager fm) {
+			super(fm);
+		}
 
-	    @Override
-	    public boolean onDown(MotionEvent event) { 
-	        Log.d(DEBUG_TAG,"onDown: " + event.toString()); 
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "down";
-	        return true;
-	    }
+		@Override
+		public Fragment getItem(int position) {
+			return PlaceholderFragment.newInstance(position + 1);
+		}
 
-	    @Override
-	    public boolean onFling(MotionEvent event1, MotionEvent event2, 
-	            final float velocityX, final float velocityY) {
-	        Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else {
-	        	note = "fling" + " X: "+ velocityX + " Y: " + velocityY;
-	        	if (rendererSet) {
-	            	glSurfaceView.queueEvent(new Runnable() {
-	            		@Override
-	            		public void run () {	            			
-	                		renderer.moveCamera(velocityX/8000.0f, velocityY/8000.0f);
-	            		}
-	            	});
-	            }
-	        	
-	        }
-	        return true;
-	    }
+		@Override
+		public int getCount() {
+			return 5;
+		}
+	}
 
-	    @Override
-	    public void onLongPress(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onLongPress: " + event.toString()); 
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else {
-	        	note = "long press";
-	        	if (rendererSet) {
-	        		final float normalizedX = (event.getX() / (float) getDimensions().widthPixels) * 2- 1;
-	        		final float normalizedY = -((event.getY() / (float) getDimensions().heightPixels) * 2 -1);
-	        		note = note + " X: " + normalizedX + " Y: " + normalizedY;
-	            	glSurfaceView.queueEvent(new Runnable() {
-	            		@Override
-	            		public void run () {	            			
-	            			renderer.setObject(0, (float) ((mAzimuth - normalizedX)%360), -pitch+normalizedY*5f, roll);
-	            		}
-	            	});
-	            }	        	
-	        }
-	    }
+	public static class PlaceholderFragment extends Fragment {
+		private static final String ARG_SECTION_NUMBER = "section_number";
 
-	    @Override
-	    public boolean onScroll(MotionEvent e1, MotionEvent e2, final float distanceX,
-	            final float distanceY) {
-	        Log.d(DEBUG_TAG, "onScroll: " + e1.toString()+e2.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else {
-	        	note = "scroll" + " X: "+distanceX + " Y: "+distanceY;
+		public static PlaceholderFragment newInstance(int sectionNumber) {
+			PlaceholderFragment fragment = new PlaceholderFragment();
+			Bundle args = new Bundle();
+			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
+			fragment.setArguments(args);
+			return fragment;
+		}
 
-	        }
-	        return true;
-	    }
+		public PlaceholderFragment() {
+		}
 
-	    @Override
-	    public void onShowPress(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onShowPress: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "show press";
-	    }
+		@Override
+		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+			View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+			int sectionNum = getArguments().getInt(ARG_SECTION_NUMBER);
+			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
+			textView.setText(Integer.toString(sectionNum));
+			
+			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
+			
+			if (sectionNum == 1)
+				imgView.setImageResource(R.drawable.product1);
+			else if (sectionNum == 2)
+				imgView.setImageResource(R.drawable.product2);
+			else if (sectionNum == 3)
+				imgView.setImageResource(R.drawable.product3);
+			else if (sectionNum == 4)
+				imgView.setImageResource(R.drawable.product4);
+			else if (sectionNum == 5)
+				imgView.setImageResource(R.drawable.product5);
+			return rootView;
+		}
+	}
+	
+	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
 
-	    @Override
-	    public boolean onSingleTapUp(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onSingleTapUp: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "single tap";
-	        return true;
-	    }
+		public SectionsPagerAdapterApprentice(FragmentManager fm) {
+			super(fm);
+		}
 
-	    @Override
-	    public boolean onDoubleTap(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onDoubleTap: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "double tap";
-	        return true;
-	    }
+		@Override
+		public Fragment getItem(int position) {
+			return PlaceholderFragmentApprentice.newInstance(position + 1);
+		}
 
-	    @Override
-	    public boolean onDoubleTapEvent(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onDoubleTapEvent: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "double tap event";
-	        return true;
-	    }
+		@Override
+		public int getCount() {
+			return 3;
+		}
+	}
 
-	    @Override
-	    public boolean onSingleTapConfirmed(MotionEvent event) {
-	        Log.d(DEBUG_TAG, "onSingleTapConfirmed: " + event.toString());
-	        if (touchType == 0)
-	        	note = "touch disabled";
-	        else
-	        	note = "single tap";
-	        return true;
-	    }
+	public static class PlaceholderFragmentApprentice extends Fragment {
+		private static final String ARG_SECTION_NUMBER = "section_number";
 
+		public static PlaceholderFragmentApprentice newInstance(int sectionNumber) {
+			PlaceholderFragmentApprentice fragment = new PlaceholderFragmentApprentice();
+			Bundle args = new Bundle();
+			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
+			fragment.setArguments(args);
+			return fragment;
+		}
 
-	    private void prepareListData() {
-	        listDataHeader = new ArrayList<String>();
-	        listDataChild = new HashMap<String, List<String>>();
-	 
-	        // Adding child data
-	        listDataHeader.add("Mode Selection");
-	 
-	        // Adding child data
-	        List<String> modegroup = new ArrayList<String>();
-	        modegroup.add("Visitor");
-	        modegroup.add("Apprentice");
-	        modegroup.add("Navigation");
-	        modegroup.add("Calendar");
-	 
-	        listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
-	    }
-	    
-	    public void myButtonClickHandler(View view) {
-	        switch (view.getId()) {
-	        case R.id.forwardButton:
-	        	if (currentStep < maxFlowChartStep)
-	        		currentStep++;
-	        	else
-	        		currentStep = 1;	        	
-	        	//stepNumber.setText("Step: " + currentStep);
-	        	Toast.makeText(this, "Forward Button Clicked", Toast.LENGTH_SHORT).show();
-	            break;
-	        case R.id.backwardButton:
-	        	if (currentStep > 1)
-	        		currentStep--;
-	        	else
-	        		currentStep = maxFlowChartStep;
-	        	//stepNumber.setText("Step: " + currentStep);
-	        	Toast.makeText(this, "Backward Button Clicked", Toast.LENGTH_SHORT).show();
-	            break;
-	        case R.id.showButton:
-	        	Toast.makeText(this, "Show Product Button Clicked", Toast.LENGTH_SHORT).show();
-	            break;
-	        }
-	    }
+		public PlaceholderFragmentApprentice() {
+		}
+
+		@Override
+		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+			View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+			int sectionNum = getArguments().getInt(ARG_SECTION_NUMBER);
+			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
+			textView.setText(Integer.toString(sectionNum));
+			
+			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
+			
+			if (sectionNum == 1)
+				imgView.setImageResource(R.drawable.step1);
+			else if (sectionNum == 2)
+				imgView.setImageResource(R.drawable.step2);
+			else if (sectionNum == 3)
+				imgView.setImageResource(R.drawable.step3);
+			return rootView;
+		}
+	}	
+	
+	private void prepareListData() {
+        listDataHeader = new ArrayList<String>();
+        listDataChild = new HashMap<String, List<String>>();
+ 
+        // Adding child data
+        listDataHeader.add("Mode Selection");
+ 
+        // Adding child data
+        List<String> modegroup = new ArrayList<String>();
+        modegroup.add("World");
+        modegroup.add("Visitor");
+        modegroup.add("Apprentice");
+        modegroup.add("Navigation");
+        modegroup.add("Calendar");
+ 
+        listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
+    }
 }

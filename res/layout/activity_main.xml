@@ -3,78 +3,46 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" >    
-             	
-    <FrameLayout
-        android:id="@+id/camera_preview"
-	    android:layout_width="fill_parent"
-	    android:layout_height="480dip"
-	    android:layout_weight="0.59" >
-	    
-	</FrameLayout>>
-   	       
-	<FrameLayout
-	    android:id="@+id/control_overlay"
-	    android:layout_width="fill_parent"
-	    android:layout_height="480dip"
-	    android:layout_weight="0.2" >
-	    
-	    <ExpandableListView
-        	android:id="@+id/expandableListView"
-        	android:layout_weight="0.9"
-        	android:layout_width="match_parent"
-        	android:layout_height="wrap_content" >
-        
-    	</ExpandableListView>
-	    
-    	<Button
-            android:id="@+id/forwardButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/expandableListView"
-            android:layout_marginTop="390dp"
-            android:layout_toRightOf="@+id/backwardButton"
-            android:layout_gravity="right"
-            android:onClick="myButtonClickHandler"
-            android:text="Next Step" />
-        
-    	<Button
-            android:id="@+id/showButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="390dp"           
-            android:layout_gravity="bottom|center_horizontal"
-            android:onClick="myButtonClickHandler"
-            android:text="Show Prototype" /> 
-    	
-        <Button
-            android:id="@+id/backwardButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="390dp"
-            android:layout_below="@+id/expandableListView"
-            android:layout_toLeftOf="@+id/forwardButton"
-            android:layout_gravity="left"
-            android:onClick="myButtonClickHandler"
-            android:text="Last Step" />
+    android:orientation="vertical" >
 
-        <TextView
-            android:id="@+id/flowChartStepView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="200dp"
-            android:textSize="28sp"
-            android:textStyle="bold|italic"
-            android:textColor="#ff0000"
-            android:text="" />
-       
+    <FrameLayout 
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+	    <FrameLayout
+	        android:id="@+id/camera_preview"
+	        android:layout_width="fill_parent"
+	        android:layout_height="fill_parent" >
+	    </FrameLayout>
+	    
+	    <TextView
+	        android:id="@+id/loading_text"
+	        android:layout_height="wrap_content"
+	        android:layout_width="wrap_content"
+	        android:text="Loading..."
+	        android:textColor="#ffffff"
+	        android:layout_gravity="center"
+	        android:textSize="60sp"> 
+	    </TextView>
+	    
+	    <android.support.v4.view.ViewPager 
+		    android:id="@+id/pager"
+		    android:layout_width="fill_parent"
+		    android:layout_height="fill_parent"
+	    	tools:context="com.example.augmentedreality.ARVIsionActivity" />
     </FrameLayout>
+
+    <ExpandableListView
+       	android:id="@+id/expandableListView"
+       	android:layout_width="match_parent"
+       	android:layout_height="wrap_content"
+       	android:background="#000000"
+       	android:alpha="1" >
+   	</ExpandableListView>    	
     
 	<FrameLayout
 	    android:id="@+id/calendar_control_overlay"
 	    android:layout_width="fill_parent"
-	    android:layout_height="480dip">
+	    android:layout_height="fill_parent">
 
 		<CheckBox
 		    android:id="@+id/checkbox_scheduled"
@@ -96,24 +64,6 @@
 		    android:text="Available"
 		    android:layout_gravity="bottom|left"
 		    android:layout_marginBottom="80dp" />
-	    
-    </FrameLayout>>
-        
-    <FrameLayout
-        android:id="@+id/locationview"        
-        android:layout_below="@+id/camera_preview"
-        android:layout_width="match_parent"
-        android:layout_height="42dp" >
-
     </FrameLayout>
     
-    <FrameLayout
-        android:id="@+id/topview"        
-        android:layout_below="@+id/locationview"
-        android:layout_width="match_parent"
-        android:layout_height="16dp"
-        android:layout_marginTop="0dp" >
-
-    </FrameLayout>
-
 </RelativeLayout>
