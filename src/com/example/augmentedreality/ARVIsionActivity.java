@@ -116,14 +116,15 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     public static boolean sensorAvailable = false;
     public Timer timer;
     public long timerInterval = 5000l;
+    private boolean mLoading = false;
     
     private boolean mFailed;
     
 	private final float ALPHA = 0.15f;
 
 	// home center
-	double lat = 37.87565;
-	double lon = -122.25869;
+	double lat = 37.87474;
+	double lon = -122.25850;
 	public static int METER_PER_LAT = 110994;
 	public static int METER_PER_LON = 87980;
 	double dx = 0.0;
@@ -332,7 +333,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 
         initGl();  // initialize OpenGL view
         timer = new Timer();
-        timer.schedule(task, 0l, 10000l);   
+        timer.schedule(task, 0l, timerInterval);   
     }
 
     @Override
@@ -391,7 +392,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         	runOnUiThread(new Runnable() {
 				@Override
 				public void run() {						
-					mLoadingText.setVisibility(View.INVISIBLE);	
+					mLoadingText.setVisibility(View.INVISIBLE);				
 				}
 			});
         }
