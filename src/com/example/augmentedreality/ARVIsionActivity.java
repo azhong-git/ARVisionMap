@@ -71,6 +71,14 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
 	int modeStatus;
     
+	// expandable list view for navigation mode
+	ExpandableListAdapter deviceListAdapter;
+	ExpandableListView deviceview;
+    List<String> deviceDataHeader;
+    HashMap<String, List<String>> deviceDataChild;
+    enum devices {Scanner, Afinia, ProJet, PhotoStudio};  
+	int deviceStatus;
+	
     // calendar
     boolean available, scheduled, occupied;
 	    
@@ -94,6 +102,8 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	FrameLayout view;
 	// control panel for calendar mode
 	FrameLayout calendarview;
+	// control panel for navigation mode
+	FrameLayout navigationview;
     // Loading text
     TextView mLoadingText;
     
@@ -181,18 +191,22 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         mLoadingText = (TextView) findViewById(R.id.loading_text);
         
-        /////////
+        // get control panel views
         calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
-        
+        navigationview = (FrameLayout) findViewById(R.id.navigation_control_overlay);
         
         // get the listview
         menuview = (ExpandableListView) findViewById(R.id.expandableListView);
+        deviceview = (ExpandableListView) findViewById(R.id.deviceExpandableListView);
         // preparing list data
         prepareListData();
         listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild); 
+        deviceListAdapter = new ExpandableListAdapter(this, deviceDataHeader, deviceDataChild);
         // setting list adapter
         menuview.setAdapter(listAdapter);        
         modeStatus = modes.modeWorld.ordinal();
+        deviceview.setAdapter(deviceListAdapter);
+        deviceStatus = devices.Afinia.ordinal();
                 
         check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
         check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
@@ -201,12 +215,42 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	    scheduled = false;
 	    occupied = false;
 	    calendarview.setVisibility(View.INVISIBLE);
+	    navigationview.setVisibility(View.INVISIBLE);
         
 	    mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
         mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		//mViewPager.setAdapter(mSectionsPagerAdapter);
 		mViewPager.setVisibility(View.INVISIBLE);
+		
+		deviceview.setOnChildClickListener(new OnChildClickListener() {
+
+			@Override
+			public boolean onChildClick(ExpandableListView parent, View v,
+					int groupPosition, int childPosition, long id) {
+				// TODO Auto-generated method stub
+				deviceStatus = childPosition;
+				Toast.makeText(getApplicationContext(), deviceDataHeader.get(groupPosition)+" : "+deviceDataChild.get(deviceDataHeader.get(groupPosition)).get(childPosition), 
+                		Toast.LENGTH_SHORT).show();
+				
+				if (deviceStatus == devices.Scanner.ordinal()) {
+					// render direction arrows or signs to 3D scanner
+				}
+				else if (deviceStatus == devices.Afinia.ordinal()) {
+					// render direction arrows or signs to Afinia H-series (the small 3D printer)
+				}
+				else if (deviceStatus == devices.ProJet.ordinal()) {
+					// render direction arrows or signs to ProJet 3000 (the large 3D printer)
+				}
+				else if (deviceStatus == devices.PhotoStudio.ordinal()) {
+					// render direction arrows or signs to Product Photo Studio
+				}
+				// directions for other devices can be added
+				deviceview.collapseGroup(groupPosition);
+				return false;
+			}
+			
+		});
 		
         menuview.setOnChildClickListener(new OnChildClickListener() {
         	@Override
@@ -223,6 +267,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
                 	}
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
+        			navigationview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
                 	if (rendererSet) {
@@ -234,6 +279,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
                 	mViewPager.setVisibility(View.VISIBLE);
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
+            		navigationview.setVisibility(View.INVISIBLE);
                 }                
                 else if (modeStatus == modes.modeApprentice.ordinal()) {
                 	if (rendererSet) {
@@ -244,6 +290,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
                 	mViewPager.setVisibility(View.VISIBLE);
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
+            		navigationview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
                 	if (!rendererSet) {
@@ -254,6 +301,7 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
                 	calendarview.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.VISIBLE);
         			calendarview.bringToFront();
+        			navigationview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeNavigation.ordinal()) {
                 	if (!rendererSet) {
@@ -262,6 +310,9 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
                 	}
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
+        			navigationview.setVisibility(View.INVISIBLE);
+        			navigationview.setVisibility(View.VISIBLE);
+        			navigationview.bringToFront();
                 }
                 menuview.collapseGroup(groupPosition);
                 return true;
@@ -665,9 +716,12 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	private void prepareListData() {
         listDataHeader = new ArrayList<String>();
         listDataChild = new HashMap<String, List<String>>();
- 
+        deviceDataHeader = new ArrayList<String>();
+        deviceDataChild = new HashMap<String, List<String>>();
+        
         // Adding child data
         listDataHeader.add("Mode Selection");
+        deviceDataHeader.add("Device Selection");
  
         // Adding child data
         List<String> modegroup = new ArrayList<String>();
@@ -676,7 +730,13 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         modegroup.add("Apprentice");
         modegroup.add("Navigation");
         modegroup.add("Calendar");
+        List<String> devicegroup = new ArrayList<String>();
+        devicegroup.add("3D Scanner");
+        devicegroup.add("Afinia H-series");
+        devicegroup.add("ProJet 3000");
+        devicegroup.add("Product Photo Studio");
  
         listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
+        deviceDataChild.put(deviceDataHeader.get(0), devicegroup);
     }
 }
