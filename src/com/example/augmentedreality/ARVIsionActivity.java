@@ -41,12 +41,17 @@ import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v13.app.FragmentStatePagerAdapter;
+import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
+import android.view.ScaleGestureDetector.OnScaleGestureListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.GestureDetector;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -61,7 +66,9 @@ import android.widget.Toast;
 import com.example.detection.DetectionBasedTracker;
 import com.example.openglbasics.R;
 
-public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener {
+public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, 
+GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
+{
 	
 	// expandable list view for menu	
 	ExpandableListAdapter listAdapter;
@@ -104,6 +111,9 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
 	
+	private GestureDetectorCompat mDetector; 
+	private ScaleGestureDetector mScaleDetector;
+	
 	// sensors
     private SensorManager mSensMan;
     static public float mAzimuth, roll, pitch;
@@ -130,6 +140,9 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	double dx = 0.0;
 	double dy = 0.0;
 	double dz = 0.0;
+	static float rotateX = -90;
+	static float rotateZ = 0;
+	static float zoom = 1;
 	// if true: initial map loaded relatively, if false use lat and lon as defined
 	boolean fetchLocationFirstAttempt = false;
 	private String prevLoc = "";
@@ -177,6 +190,9 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
+        
+        mDetector = new GestureDetectorCompat(this,this);
+        mScaleDetector = new ScaleGestureDetector(this, this);
 
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         mLoadingText = (TextView) findViewById(R.id.loading_text);
@@ -286,7 +302,8 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 				else {
 					Toast.makeText(calendarview.getContext(), "Available Unchecked", Toast.LENGTH_SHORT).show();
 					available = false;
-				}				
+				}
+				//updateDeviceStatus();
 			}
 		});
         
@@ -300,7 +317,8 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 				else {
 					Toast.makeText(calendarview.getContext(), "Occupied Unchecked", Toast.LENGTH_SHORT).show();
 					occupied = false;
-				}				
+				}
+				//updateDeviceStatus();
 			}
 		});
         
@@ -558,6 +576,12 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 		}	
 	};
 	
+	private void updateDeviceStatus() {
+		    
+		
+	}
+
+	
 	public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
 
 		public SectionsPagerAdapter(FragmentManager fm) {
@@ -679,4 +703,75 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
  
         listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
     }
+
+	@Override 
+    public boolean onTouchEvent(MotionEvent event){ 
+		boolean res = this.mScaleDetector.onTouchEvent(event);
+		boolean isScaling = res = mScaleDetector.isInProgress();
+		if (!isScaling)
+			res = this.mDetector.onTouchEvent(event);
+        return res? res : super.onTouchEvent(event);
+    }
+	 
+	@Override
+	public boolean onDown(MotionEvent arg0) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean onFling(MotionEvent arg0, MotionEvent arg1, float arg2,
+			float arg3) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void onLongPress(MotionEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean onScroll(MotionEvent e1, MotionEvent e2, final float distanceX,
+            final float distanceY) {
+		// TODO Auto-generated method stub
+		Log.d("DEBUG", "onScroll: " + e1.toString()+e2.toString());
+		if (Math.abs(distanceX) > Math.abs(distanceY))
+			rotateZ = (rotateZ - distanceX) % 360;
+		else
+			rotateX = (rotateX - distanceY) % 360;
+		return true;
+	}
+
+	@Override
+	public void onShowPress(MotionEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean onSingleTapUp(MotionEvent arg0) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean onScale(ScaleGestureDetector detector) {
+		// TODO Auto-generated method stub
+		zoom = (1/detector.getScaleFactor());
+		return false;
+	}
+
+	@Override
+	public boolean onScaleBegin(ScaleGestureDetector detector) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void onScaleEnd(ScaleGestureDetector detector) {
+		// TODO Auto-generated method stub
+		
+	}
 }

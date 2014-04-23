@@ -32,6 +32,7 @@ import android.opengl.GLSurfaceView.Renderer;
 import com.example.objects.Arrow;
 import com.example.objects.Caption;
 import com.example.objects.RawObject;
+import com.example.objects.RawVertexObject;
 import com.example.objects.Square;
 import com.example.openglbasics.R;
 import com.example.util.ColorShaderProgram;
@@ -41,6 +42,7 @@ import com.example.util.TextResourceReader;
 import com.example.util.TextureHelper;
 import com.example.util.TextureShaderProgram;
 import com.example.util.TransparentTextureShaderProgram;
+import com.example.util.VertexObjectShaderProgram;
 
 public class ARVisionRenderer implements Renderer {
 
@@ -65,6 +67,14 @@ public class ARVisionRenderer implements Renderer {
 	private float[] compassViewMatrix;
 	private float[] compassModelViewMatrix;
 	private float[] compassFinalMatrix;
+	
+	// separate matrices for exhibits (compass never moves out of screen)
+	private float[] exhibitModelMatrix;
+	private float[] exhibitRotationMatrix;
+	private float[] exhibitTranslationMatrix;
+	private float[] exhibitViewMatrix;
+	private float[] exhibitModelViewMatrix;
+	private float[] exhibitFinalMatrix;
 
 	// helper matrices for setting up camera lookat
 	float[] forward;
@@ -134,11 +144,15 @@ public class ARVisionRenderer implements Renderer {
 	// compass object
 	private Square compass;
 	private int compassTexture;
+	
+	private RawVertexObject vertexObject;
+	private int rawVertexObjFile = R.drawable.trexobj;
 
 	// object without texture
 	private Arrow[] arrow;
 	private float [][] arrowPallette= {{0f, 0.40f, 0.20f}, {0.4f, 0f, 0f}, {0f, 0.2f, 0.4f}};
 	private int [] arrowColor;
+	int [] arrowStatus;
 	
 	//---------------------------------------------------------------------------------
 	//------------------------------- Shader programs ---------------------------------
@@ -146,6 +160,7 @@ public class ARVisionRenderer implements Renderer {
 	private TransparentTextureShaderProgram transparentProgram;
 	private ColorShaderProgram colorProgram;
 	private ObjectShaderProgram objectProgram;
+	private VertexObjectShaderProgram vertexObjectProgram;
 	//---------------------------------------------------------------------------------
 	
 	public ARVisionRenderer(Context context) {
@@ -168,6 +183,7 @@ public class ARVisionRenderer implements Renderer {
 		objLoc = new float [numObjects][3];
 		objRot = new float [numObjects][3];
 		arrowColor = new int [numArrows];
+		arrowStatus = new int [numArrows];
 		
 		for (int i = 0; i < numObjects; i++) {
 			objectType[i] = TextResourceReader.readNextInt(scan);
@@ -177,6 +193,7 @@ public class ARVisionRenderer implements Renderer {
 			}
 			else {
 				arrowColor[i-numTextures] = TextResourceReader.readNextInt(scan);
+				arrowStatus[i-numTextures] = 0;
 			}
 			for (int j = 0; j < 3; j++)
 				objLoc[i][j] = TextResourceReader.readNextFloat(scan);
@@ -206,6 +223,14 @@ public class ARVisionRenderer implements Renderer {
 		compassViewMatrix = new float[16];
 		compassModelViewMatrix = new float[16];
 		compassFinalMatrix = new float[16];
+		
+		// separate matrices for exhibit (compass never moves out of screen)
+		exhibitModelMatrix = new float[16];
+		exhibitRotationMatrix = new float[16];
+		exhibitTranslationMatrix = new float[16];
+		exhibitViewMatrix = new float[16];
+		exhibitModelViewMatrix = new float[16];
+		exhibitFinalMatrix = new float[16];
 
 		// helper matrices for setting up camera lookat
 		forward = new float[3];
@@ -227,6 +252,8 @@ public class ARVisionRenderer implements Renderer {
 		for (i = 0; i < numRawObjects; i++) {
 			object[i] = new RawObject(context, rawObjTextureMap[objectTexture[i+numCaptions]]);
 		}
+		
+		vertexObject = new RawVertexObject(context, rawVertexObjFile);
 		
 		// initialize arrows
 		arrow = new Arrow[numArrows];
@@ -252,6 +279,7 @@ public class ARVisionRenderer implements Renderer {
 		transparentProgram = new TransparentTextureShaderProgram(context);
 		colorProgram = new ColorShaderProgram(context);
 		objectProgram = new ObjectShaderProgram(context);
+		vertexObjectProgram = new VertexObjectShaderProgram(context);
 		
 		// initialize objects
 		initObjects();
@@ -268,7 +296,7 @@ public class ARVisionRenderer implements Renderer {
 		
 		// objects successfully loaded
 		GLStatus = GraphicsStatus.Ready;
-				
+		
 	}
 
 	@Override
@@ -287,6 +315,10 @@ public class ARVisionRenderer implements Renderer {
 		setIdentityM(compassRotationMatrix, 0);
 		setIdentityM(compassTranslationMatrix, 0);
 		translateM(compassTranslationMatrix, 0, 0f, 0f, -zcompass);
+		
+		setIdentityM(exhibitRotationMatrix, 0);
+		setIdentityM(exhibitTranslationMatrix, 0);
+		translateM(exhibitTranslationMatrix, 0, 0f, 0f, -zcompass/2);
 
 		for (i = 0; i < numTextures; i++) {
 			translateM(translationMatrix[i], 0, objLoc[i][0], objLoc[i][1], objLoc[i][2]);
@@ -317,6 +349,13 @@ public class ARVisionRenderer implements Renderer {
 				compassModelMatrix, 0);
 		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0,
 				compassModelViewMatrix, 0);
+		
+		multiplyMM(exhibitModelMatrix, 0, exhibitTranslationMatrix, 0,
+				exhibitRotationMatrix, 0);
+		multiplyMM(exhibitModelViewMatrix, 0, exhibitViewMatrix, 0,
+				exhibitModelMatrix, 0);
+		multiplyMM(exhibitFinalMatrix, 0, sensorProjectionMatrix, 0,
+				exhibitModelViewMatrix, 0);
 	}
 
 	@Override
@@ -339,6 +378,11 @@ public class ARVisionRenderer implements Renderer {
 			object[i-numCaptions].bindData(objectProgram);
 			object[i-numCaptions].draw();
 		}
+		
+		vertexObjectProgram.useProgram();
+		vertexObjectProgram.setUniforms(exhibitFinalMatrix);
+		vertexObject.bindData(vertexObjectProgram);
+		vertexObject.draw();
 
 		colorProgram.useProgram();
 		for (; i < numObjects; i++) {
@@ -416,6 +460,7 @@ public class ARVisionRenderer implements Renderer {
 			setLookAtM(compassViewMatrix, 0, 0f, 0f, 0f, 0f, y, -1f, a
 					* up_portrait[0] - b, a * up_portrait[1], a
 					* up_portrait[2]);
+			setLookAtM(exhibitViewMatrix, 0, 0f, 0f, 0f, 0f, 0, -1f, - b, a, 0);
 
 		}
 		int i = 0;
@@ -445,6 +490,18 @@ public class ARVisionRenderer implements Renderer {
 				compassModelMatrix, 0);
 		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0,
 				compassModelViewMatrix, 0);
+		
+		setIdentityM(exhibitRotationMatrix, 0);
+		rotateM(exhibitRotationMatrix, 0, ARVIsionActivity.rotateZ, 0f, 1f, 0f);
+		rotateM(exhibitRotationMatrix, 0, ARVIsionActivity.rotateX, 1f, 0f, 0f);
+		setIdentityM(exhibitTranslationMatrix, 0);
+		translateM(exhibitTranslationMatrix, 0, 0f, 0f, -ARVIsionActivity.zoom*zcompass/2);
+		multiplyMM(exhibitModelMatrix, 0, exhibitTranslationMatrix, 0,
+				exhibitRotationMatrix, 0);
+		multiplyMM(exhibitModelViewMatrix, 0, exhibitViewMatrix, 0,
+				exhibitModelMatrix, 0);
+		multiplyMM(exhibitFinalMatrix, 0, sensorProjectionMatrix, 0,
+				exhibitModelViewMatrix, 0);
 	}
 
 	void normalize(float[] a) {
