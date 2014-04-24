@@ -346,38 +346,42 @@ public class ARVisionRenderer implements Renderer {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-		int i = 0;
-		textureProgram.useProgram();
-		for (; i < numCaptions; i++) {
-			textureProgram.setUniforms(finalMatrix[i], textures[i]);
-			caption[i].bindData(textureProgram);
-			caption[i].draw();
-		}
-
-		objectProgram.useProgram();
-		for (; i < numTextures; i++) {
-			objectProgram.setUniforms(finalMatrix[i], textures[i]);
-			object[i-numCaptions].bindData(objectProgram);
-			object[i-numCaptions].draw();
+		if (ARVIsionActivity.mode != 1 && ARVIsionActivity.mode != 2) {
+			int i = 0;
+			textureProgram.useProgram();
+			for (; i < numCaptions; i++) {
+				textureProgram.setUniforms(finalMatrix[i], textures[i]);
+				caption[i].bindData(textureProgram);
+				caption[i].draw();
+			}
+	
+			objectProgram.useProgram();
+			for (; i < numTextures; i++) {
+				objectProgram.setUniforms(finalMatrix[i], textures[i]);
+				object[i-numCaptions].bindData(objectProgram);
+				object[i-numCaptions].draw();
+			}
+			colorProgram.useProgram();
+			for (; i < numObjects; i++) {
+				colorProgram.setUniforms(finalMatrix[i], arrowPallette[arrowColor[i-numTextures]][0], 
+						arrowPallette[arrowColor[i-numTextures]][1], arrowPallette[arrowColor[i-numTextures]][2], 0.6f);
+				arrow[i-numTextures].bindData(colorProgram);
+				arrow[i-numTextures].draw();
+			}
+			
+			transparentProgram.useProgram();
+			transparentProgram.setUniforms(compassFinalMatrix, compassTexture);
+			compass.bindData(transparentProgram);
+			compass.draw();
 		}
 		
-		vertexObjectProgram.useProgram();
-		vertexObjectProgram.setUniforms(exhibitFinalMatrix);
-		vertexObject.bindData(vertexObjectProgram);
-		vertexObject.draw();
-
-		colorProgram.useProgram();
-		for (; i < numObjects; i++) {
-			colorProgram.setUniforms(finalMatrix[i], arrowPallette[arrowColor[i-numTextures]][0], 
-					arrowPallette[arrowColor[i-numTextures]][1], arrowPallette[arrowColor[i-numTextures]][2], 0.6f);
-			arrow[i-numTextures].bindData(colorProgram);
-			arrow[i-numTextures].draw();
+		// visitor mode
+		if (ARVIsionActivity.mode == 1){
+			vertexObjectProgram.useProgram();
+			vertexObjectProgram.setUniforms(exhibitFinalMatrix);
+			vertexObject.bindData(vertexObjectProgram);
+			vertexObject.draw();
 		}
-		
-		transparentProgram.useProgram();
-		transparentProgram.setUniforms(compassFinalMatrix, compassTexture);
-		compass.bindData(transparentProgram);
-		compass.draw();
 
 	}
 
@@ -469,8 +473,9 @@ public class ARVisionRenderer implements Renderer {
 				exhibitViewMatrix, exhibitModelViewMatrix,
 				sensorProjectionMatrix, exhibitFinalMatrix);
 	}
-
-	// vector normalization
+	
+	// ---------------------- Helper functions -----------------------
+	// helper: vector normalization
 	void normalize(float[] a) {
 		double sum = 0;
 		for (int i = 0; i < a.length; i++) {
@@ -482,7 +487,7 @@ public class ARVisionRenderer implements Renderer {
 		}
 
 	}
-	
+
 	// helper: calculate MVP from model, view, project
 	private void multiplyVP(float [] model, float [] view, float [] modelView, 
 			float [] project, float [] modelViewProject) {

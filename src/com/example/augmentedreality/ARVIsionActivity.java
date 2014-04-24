@@ -143,6 +143,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	static float rotateX = -90;
 	static float rotateZ = 0;
 	static float zoom = 1;
+	// 0: world mode, 1: visitor mode, 2: apprentice mode, 3: navigation mode, 4: calendar mode
+	static int mode = 0;
+
 	// if true: initial map loaded relatively, if false use lat and lon as defined
 	boolean fetchLocationFirstAttempt = false;
 	private String prevLoc = "";
@@ -233,49 +236,55 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
                 		Toast.LENGTH_SHORT).show();
                 
                 if (modeStatus == modes.modeWorld.ordinal()) {
-                	if (!rendererSet) {
+                	mode = 0;
+                	/*if (!rendererSet) {
             			view.addView(glSurfaceView);
             			rendererSet = true;
-                	}
+                	}*/
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
-                	if (rendererSet) {
+                	/*if (rendererSet) {
             			view.removeView(glSurfaceView);
             			rendererSet = false;
-                	}
-                	mSectionsPagerAdapter.notifyDataSetChanged();
+                	}*/
+                	mode = 1;
+                	/*mSectionsPagerAdapter.notifyDataSetChanged();
                 	mViewPager.setAdapter(mSectionsPagerAdapter);                	
                 	mViewPager.setVisibility(View.VISIBLE);
-        			mViewPager.setCurrentItem(0);
+        			mViewPager.setCurrentItem(0);*/
+                	mViewPager.setVisibility(View.INVISIBLE);
             		calendarview.setVisibility(View.INVISIBLE);
                 }                
                 else if (modeStatus == modes.modeApprentice.ordinal()) {
-                	if (rendererSet) {
+                	mode = 2;
+                	/*if (rendererSet) {
             			view.removeView(glSurfaceView);
             			rendererSet = false;            			
-                	}
+                	}*/
                 	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
                 	mViewPager.setVisibility(View.VISIBLE);
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
-                	if (!rendererSet) {
+                	mode = 4;
+                	/*if (!rendererSet) {
             			view.addView(glSurfaceView);
             			rendererSet = true;
-                	}
+                	}*/
                 	mViewPager.setVisibility(View.INVISIBLE);
                 	calendarview.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.VISIBLE);
         			calendarview.bringToFront();
                 }
                 else if (modeStatus == modes.modeNavigation.ordinal()) {
-                	if (!rendererSet) {
+                	mode = 3;
+                	/*if (!rendererSet) {
             			view.addView(glSurfaceView);
             			rendererSet = true;
-                	}
+                	}*/
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
                 }
@@ -575,11 +584,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			return build.toString();
 		}	
 	};
-	
-	private void updateDeviceStatus() {
-		    
-		
-	}
 
 	
 	public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
@@ -632,6 +636,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				imgView.setImageResource(R.drawable.product4);
 			else if (sectionNum == 5)
 				imgView.setImageResource(R.drawable.product5);
+			
 			return rootView;
 		}
 	}
