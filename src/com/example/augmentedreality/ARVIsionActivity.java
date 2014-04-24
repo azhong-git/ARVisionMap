@@ -759,7 +759,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	@Override
 	public boolean onScale(ScaleGestureDetector detector) {
 		// TODO Auto-generated method stub
-		zoom = (1/detector.getScaleFactor());
+		zoom = 1/detector.getScaleFactor();
 		return false;
 	}
 

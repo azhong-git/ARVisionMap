@@ -94,13 +94,8 @@ public class ARVisionRenderer implements Renderer {
 	private float [][] objLoc;
 	private float [][] objRot;
 
-	private final float busz = 1.0f;
 	private final float zcompass = 1f;
-
-	// camera location
-	private float cameradx = 0;
-	private float camerady = 0;
-	private float cameradz = 0;
+	private final float zexhibit = 1.25f;
 
 	// other parameters
 	private float x = 0;
@@ -318,44 +313,31 @@ public class ARVisionRenderer implements Renderer {
 		
 		setIdentityM(exhibitRotationMatrix, 0);
 		setIdentityM(exhibitTranslationMatrix, 0);
-		translateM(exhibitTranslationMatrix, 0, 0f, 0f, -zcompass/2);
+		translateM(exhibitTranslationMatrix, 0, 0f, 0f, -zexhibit);
 
 		for (i = 0; i < numTextures; i++) {
 			translateM(translationMatrix[i], 0, objLoc[i][0], objLoc[i][1], objLoc[i][2]);
 			rotateM(rotationMatrix[i], 0, objRot[i][1], 0, 1, 0);
-			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0,
-					translationMatrix[i], 0);
-			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0,
-					modelMatrix[i], 0);
-			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0,
-					modelViewMatrix[i], 0);
+			multiplyMVP(translationMatrix[i], rotationMatrix[i], modelMatrix[i], 
+					sensorViewMatrix, modelViewMatrix[i],
+					sensorProjectionMatrix, finalMatrix[i]);
 		}
 
 		for (; i < numObjects; i++) {
-			//rotateM(translationMatrix[i], 0, objRot[i][0], 1, 0, 0);
 			translateM(translationMatrix[i], 0, objLoc[i][0], objLoc[i][1], objLoc[i][2]);
 			rotateM(rotationMatrix[i], 0, objRot[i][0], 1, 0, 0);
-			multiplyMM(modelMatrix[i], 0, translationMatrix[i], 0,
-					rotationMatrix[i], 0);
-			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0,
-					modelMatrix[i], 0);
-			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0,
-					modelViewMatrix[i], 0);
+			multiplyMVP(rotationMatrix[i], translationMatrix[i], modelMatrix[i], 
+					sensorViewMatrix, modelViewMatrix[i],
+					sensorProjectionMatrix, finalMatrix[i]);
 		}
 
-		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0,
-				compassRotationMatrix, 0);
-		multiplyMM(compassModelViewMatrix, 0, compassViewMatrix, 0,
-				compassModelMatrix, 0);
-		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0,
-				compassModelViewMatrix, 0);
+		multiplyMVP(compassRotationMatrix, compassTranslationMatrix, compassModelMatrix,
+				compassViewMatrix, compassModelViewMatrix,
+				sensorProjectionMatrix, compassFinalMatrix);
 		
-		multiplyMM(exhibitModelMatrix, 0, exhibitTranslationMatrix, 0,
-				exhibitRotationMatrix, 0);
-		multiplyMM(exhibitModelViewMatrix, 0, exhibitViewMatrix, 0,
-				exhibitModelMatrix, 0);
-		multiplyMM(exhibitFinalMatrix, 0, sensorProjectionMatrix, 0,
-				exhibitModelViewMatrix, 0);
+		multiplyMVP(exhibitRotationMatrix, exhibitTranslationMatrix, exhibitModelMatrix,
+				exhibitViewMatrix, exhibitModelViewMatrix,
+				sensorProjectionMatrix, exhibitFinalMatrix);
 	}
 
 	@Override
@@ -435,10 +417,9 @@ public class ARVisionRenderer implements Renderer {
 			up_landscape[2] = -x;
 			normalize(up_landscape);
 
-			setLookAtM(sensorViewMatrix, 0, (float) dx + cameradx, (float) 0
-					+ camerady, (float) dz + cameradz,
-					(float) (dx + x + cameradx), (float) (dy + y + camerady),
-					(float) (dz + z + cameradz), a * up_portrait[0] + b
+			setLookAtM(sensorViewMatrix, 0, (float) dx , (float) 0, (float) dz ,
+					(float) (dx + x), (float) (dy + y),
+					(float) (dz + z), a * up_portrait[0] + b
 							* up_landscape[0], a * up_portrait[1] + b
 							* up_landscape[1], a * up_portrait[2] + b
 							* up_landscape[2]);
@@ -463,47 +444,33 @@ public class ARVisionRenderer implements Renderer {
 			setLookAtM(exhibitViewMatrix, 0, 0f, 0f, 0f, 0f, 0, -1f, - b, a, 0);
 
 		}
-		int i = 0;
-		for (; i < numTextures; i++) {
-			multiplyMM(modelMatrix[i], 0, rotationMatrix[i], 0,
-					translationMatrix[i], 0);
-			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0,
-					modelMatrix[i], 0);
-			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0,
-					modelViewMatrix[i], 0);
-		}
 		
+		int i = 0;
+		// update all map objects
 		for (; i < numObjects; i++) {
-			multiplyMM(modelMatrix[i], 0, translationMatrix[i], 0,
-					rotationMatrix[i], 0);
-			multiplyMM(modelViewMatrix[i], 0, sensorViewMatrix, 0, modelMatrix[i],
-					0);
-			multiplyMM(finalMatrix[i], 0, sensorProjectionMatrix, 0,
-					modelViewMatrix[i], 0);
+			multiplyVP(modelMatrix[i], sensorViewMatrix, modelViewMatrix[i],
+					sensorProjectionMatrix, finalMatrix[i]);
 		}
 
+		// update compass orientation during sensor update
 		setIdentityM(compassRotationMatrix, 0);
 		rotateM(compassRotationMatrix, 0, mAzimuth, 0f, 1f, 0f);
-		multiplyMM(compassModelMatrix, 0, compassTranslationMatrix, 0,
-				compassRotationMatrix, 0);
-		multiplyMM(compassModelViewMatrix, 0, compassViewMatrix, 0,
-				compassModelMatrix, 0);
-		multiplyMM(compassFinalMatrix, 0, sensorProjectionMatrix, 0,
-				compassModelViewMatrix, 0);
+		multiplyMVP(compassRotationMatrix, compassTranslationMatrix, compassModelMatrix,
+				compassViewMatrix, compassModelViewMatrix,
+				sensorProjectionMatrix, compassFinalMatrix);
 		
+		// update exhibit posture during sensor update
 		setIdentityM(exhibitRotationMatrix, 0);
 		rotateM(exhibitRotationMatrix, 0, ARVIsionActivity.rotateZ, 0f, 1f, 0f);
 		rotateM(exhibitRotationMatrix, 0, ARVIsionActivity.rotateX, 1f, 0f, 0f);
 		setIdentityM(exhibitTranslationMatrix, 0);
-		translateM(exhibitTranslationMatrix, 0, 0f, 0f, -ARVIsionActivity.zoom*zcompass/2);
-		multiplyMM(exhibitModelMatrix, 0, exhibitTranslationMatrix, 0,
-				exhibitRotationMatrix, 0);
-		multiplyMM(exhibitModelViewMatrix, 0, exhibitViewMatrix, 0,
-				exhibitModelMatrix, 0);
-		multiplyMM(exhibitFinalMatrix, 0, sensorProjectionMatrix, 0,
-				exhibitModelViewMatrix, 0);
+		translateM(exhibitTranslationMatrix, 0, 0f, 0f, -ARVIsionActivity.zoom*zexhibit/2);
+		multiplyMVP(exhibitRotationMatrix, exhibitTranslationMatrix, exhibitModelMatrix,
+				exhibitViewMatrix, exhibitModelViewMatrix,
+				sensorProjectionMatrix, exhibitFinalMatrix);
 	}
 
+	// vector normalization
 	void normalize(float[] a) {
 		double sum = 0;
 		for (int i = 0; i < a.length; i++) {
@@ -515,35 +482,21 @@ public class ARVisionRenderer implements Renderer {
 		}
 
 	}
-
-	public void moveCamera(float dx, float dy) {
-		cameradx = cameradx - forward[0] * dy - up_landscape[0] * dx;
-		camerady = camerady - forward[1] * dy - up_landscape[1] * dx;
-		cameradz = cameradz - forward[2] * dy - up_landscape[2] * dx;
+	
+	// helper: calculate MVP from model, view, project
+	private void multiplyVP(float [] model, float [] view, float [] modelView, 
+			float [] project, float [] modelViewProject) {
+		multiplyMM(modelView, 0, view, 0, model, 0);
+		multiplyMM(modelViewProject, 0, project, 0, modelView, 0);
 	}
-
-//	public void moveObject(float forward, float right) {
-//	}
-
-	public void setObject(int id, float angleX, float angleY, float angleZ) {
-		setIdentityM(translationMatrix[id + 2], 0);
-		setIdentityM(rotationMatrix[id + 2], 0);
-		translateM(translationMatrix[id + 2], 0, 0,
-				(float) (busz * Math.tan(Math.toRadians(angleY))), -busz);
-		rotateM(rotationMatrix[id + 2], 0, 270, 1, 1, 0);
-		multiplyMM(modelViewMatrix[id + 2], 0, translationMatrix[id + 2], 0,
-				rotationMatrix[id + 2], 0);
-
-		setIdentityM(rotationMatrix[id + 2], 0);
-		rotateM(rotationMatrix[id + 2], 0, (-angleX - 90) % 360, 0, 1, 0);
-		multiplyMM(modelMatrix[id + 2], 0, rotationMatrix[id + 2], 0,
-				modelViewMatrix[id + 2], 0);
-		translateM(modelMatrix[id + 2], 0, -cameradx, -camerady, -cameradz);
-		multiplyMM(modelViewMatrix[id + 2], 0, sensorViewMatrix, 0,
-				modelMatrix[id + 2], 0);
-		multiplyMM(finalMatrix[id + 2], 0, sensorProjectionMatrix, 0,
-				modelViewMatrix[id + 2], 0);
-
+	
+	// helper: calculate MVP from rotate / translate, model, view, project
+	private void multiplyMVP(float [] rt1, float [] rt2, float [] model, 
+			float [] view, float [] modelView, 
+			float [] project, float [] modelViewProject) {
+		multiplyMM(model, 0, rt2, 0, rt1, 0);
+		multiplyMM(modelView, 0, view, 0, model, 0);
+		multiplyMM(modelViewProject, 0, project, 0, modelView, 0);
 	}
 
 }
