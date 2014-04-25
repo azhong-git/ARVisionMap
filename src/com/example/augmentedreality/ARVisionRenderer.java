@@ -342,7 +342,8 @@ public class ARVisionRenderer implements Renderer {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-		if (ARVIsionActivity.mode != 1 && ARVIsionActivity.mode != 2) {
+		if (ARVIsionActivity.modeStatus != ARVIsionActivity.modes.modeVisitor.ordinal() 
+				&& ARVIsionActivity.modeStatus != ARVIsionActivity.modes.modeApprentice.ordinal()) {
 			int i = 0;
 			textureProgram.useProgram();
 			for (; i < numCaptions; i++) {
@@ -372,7 +373,7 @@ public class ARVisionRenderer implements Renderer {
 		}
 		
 		// visitor mode
-		if (ARVIsionActivity.mode == 1){
+		if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeVisitor.ordinal()){
 			vertexObjectProgram.useProgram();
 			vertexObjectProgram.setUniforms(exhibitFinalMatrix);
 			vertexObject.bindData(vertexObjectProgram);

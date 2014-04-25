@@ -74,8 +74,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	ExpandableListView menuview;
     List<String> listDataHeader;
     HashMap<String, List<String>> listDataChild;
-    enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
-	int modeStatus;
+    static public enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
+	static public int modeStatus;
     
     // calendar
     boolean available, scheduled, occupied;
@@ -140,8 +140,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	static float rotateX = -90;
 	static float rotateZ = 0;
 	static float zoom = 1;
-	// 0: world mode, 1: visitor mode, 2: apprentice mode, 3: navigation mode, 4: calendar mode
-	static int mode = 0;
 
 	// if true: initial map loaded relatively, if false use lat and lon as defined
 	boolean fetchLocationFirstAttempt = false;
@@ -200,7 +198,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         /////////
         calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
         
-        
         // get the listview
         menuview = (ExpandableListView) findViewById(R.id.expandableListView);
         // preparing list data
@@ -232,29 +229,24 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
                 		Toast.LENGTH_SHORT).show();
                 
                 if (modeStatus == modes.modeWorld.ordinal()) {
-                	mode = 0;
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
-                	mode = 1;
                 	mViewPager.setVisibility(View.INVISIBLE);
             		calendarview.setVisibility(View.INVISIBLE);
                 }                
                 else if (modeStatus == modes.modeApprentice.ordinal()) {
-                	mode = 2;
                 	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
                 	mViewPager.setVisibility(View.VISIBLE);
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeNavigation.ordinal()) {
-                	mode = 3;
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
-                	mode = 4;
                 	mViewPager.setVisibility(View.INVISIBLE);
                 	calendarview.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.VISIBLE);
@@ -556,7 +548,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			return build.toString();
 		}	
 	};
-
+	
 	
 	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
 
