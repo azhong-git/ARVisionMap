@@ -79,6 +79,25 @@
        		android:layout_gravity="top|right"
        		android:alpha="1" >
    		</ExpandableListView>
-	</FrameLayout>>
-    
+	</FrameLayout>
+	
+	<FrameLayout
+	    android:id="@+id/visitor_control_overlay"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent">
+		
+	    <Button
+            android:id="@+id/nextPrototypeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|right"
+            android:onClick="myButtonClickHandler"
+            android:layout_marginBottom="50dp"
+            android:layout_marginRight="50dp"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#ffffff"
+            android:background="@android:color/transparent"
+            android:text="Touch to see next prototype" />
+    </FrameLayout>
 </RelativeLayout>

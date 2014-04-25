@@ -51,6 +51,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -82,8 +83,12 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	ExpandableListView deviceview;
     List<String> deviceDataHeader;
     HashMap<String, List<String>> deviceDataChild;
-    enum devices {Scanner, Afinia, ProJet, PhotoStudio};  
+    enum devices {Scanner, Afinia, ProJet, PhotoStudio};
 	int deviceStatus;
+	
+	// sample for visitor mode
+	static public enum prototype {TRex, Rex};
+	static public int prototypeStatus;
 	
     // calendar
     boolean available, scheduled, occupied;
@@ -106,15 +111,20 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	
 	// OpenGL layout
 	FrameLayout view;
+	// control panel for visitor mode
+	FrameLayout visitorview;
 	// control panel for calendar mode
 	FrameLayout calendarview;
 	// control panel for navigation mode
-	FrameLayout navigationview;
+	FrameLayout navigationview;		
     // Loading text
     TextView mLoadingText;
     
     // check boxes
     CheckBox check_available, check_occupied, check_scheduled;
+    
+    // button
+    Button next_prototype;
     
     SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
@@ -206,6 +216,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         mLoadingText = (TextView) findViewById(R.id.loading_text);
         
         // get control panel views
+        visitorview = (FrameLayout) findViewById(R.id.visitor_control_overlay);
         calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
         navigationview = (FrameLayout) findViewById(R.id.navigation_control_overlay);
         
@@ -221,6 +232,10 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         modeStatus = modes.modeWorld.ordinal();
         deviceview.setAdapter(deviceListAdapter);
         deviceStatus = devices.Afinia.ordinal();
+        
+        // initiate prototype status;
+        prototypeStatus = prototype.TRex.ordinal();
+        next_prototype = (Button) findViewById(R.id.nextPrototypeButton);
                 
         check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
         check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
@@ -277,11 +292,13 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
         			navigationview.setVisibility(View.INVISIBLE);
+        			visitorview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
             		calendarview.setVisibility(View.INVISIBLE);
             		navigationview.setVisibility(View.INVISIBLE);
+            		visitorview.setVisibility(View.VISIBLE);
                 }                
                 else if (modeStatus == modes.modeApprentice.ordinal()) {
                 	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
@@ -289,10 +306,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
             		navigationview.setVisibility(View.INVISIBLE);
-                }
-                else if (modeStatus == modes.modeNavigation.ordinal()) {
-                	mViewPager.setVisibility(View.INVISIBLE);
-        			calendarview.setVisibility(View.INVISIBLE);
+            		visitorview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
@@ -300,6 +314,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         			calendarview.setVisibility(View.VISIBLE);
         			calendarview.bringToFront();
         			navigationview.setVisibility(View.INVISIBLE);
+        			visitorview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeNavigation.ordinal()) {
                 	if (!rendererSet) {
@@ -311,6 +326,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         			navigationview.setVisibility(View.INVISIBLE);
         			navigationview.setVisibility(View.VISIBLE);
         			navigationview.bringToFront();
+        			visitorview.setVisibility(View.INVISIBLE);
                 }
                 menuview.collapseGroup(groupPosition);
                 return true;
@@ -687,6 +703,21 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         deviceDataChild.put(deviceDataHeader.get(0), devicegroup);
     }
 
+	// button click event
+	public void myButtonClickHandler(View view) {
+        switch (view.getId()) {
+        case R.id.nextPrototypeButton:
+        	if (prototypeStatus == prototype.TRex.ordinal()) {
+        		prototypeStatus = prototype.Rex.ordinal();
+        	}
+        	else {
+        		prototypeStatus = prototype.TRex.ordinal();
+        	}
+        	Toast.makeText(this, "Prototype Button Clicked", Toast.LENGTH_SHORT).show();
+            break;
+        }
+    }
+	
 	@Override 
     public boolean onTouchEvent(MotionEvent event){ 
 		boolean res = this.mScaleDetector.onTouchEvent(event);

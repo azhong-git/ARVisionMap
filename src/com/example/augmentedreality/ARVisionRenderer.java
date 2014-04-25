@@ -374,10 +374,13 @@ public class ARVisionRenderer implements Renderer {
 		
 		// visitor mode
 		if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeVisitor.ordinal()){
-			vertexObjectProgram.useProgram();
-			vertexObjectProgram.setUniforms(exhibitFinalMatrix);
-			vertexObject.bindData(vertexObjectProgram);
-			vertexObject.draw();
+			if (ARVIsionActivity.prototypeStatus == ARVIsionActivity.prototype.TRex.ordinal()) {
+				vertexObjectProgram.useProgram();
+				vertexObjectProgram.setUniforms(exhibitFinalMatrix);
+				vertexObject.bindData(vertexObjectProgram);
+				vertexObject.draw();
+			}
+			// TODO implement multiple prototype rendering
 		}
 
 	}
