@@ -41,9 +41,13 @@ import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v13.app.FragmentStatePagerAdapter;
+import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -61,15 +65,17 @@ import android.widget.Toast;
 import com.example.detection.DetectionBasedTracker;
 import com.example.openglbasics.R;
 
-public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener {
+public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, 
+GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
+{
 	
 	// expandable list view for menu	
 	ExpandableListAdapter listAdapter;
 	ExpandableListView menuview;
     List<String> listDataHeader;
     HashMap<String, List<String>> listDataChild;
-    enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
-	int modeStatus;
+    static public enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
+	static public int modeStatus;
     
 	// expandable list view for navigation mode
 	ExpandableListAdapter deviceListAdapter;
@@ -110,9 +116,11 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     // check boxes
     CheckBox check_available, check_occupied, check_scheduled;
     
-    SectionsPagerAdapter mSectionsPagerAdapter;
     SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
+	
+	private GestureDetectorCompat mDetector; 
+	private ScaleGestureDetector mScaleDetector;
 	
 	// sensors
     private SensorManager mSensMan;
@@ -126,7 +134,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     public static boolean sensorAvailable = false;
     public Timer timer;
     public long timerInterval = 5000l;
-    private boolean mLoading = false;
     
     private boolean mFailed;
     
@@ -140,6 +147,10 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	double dx = 0.0;
 	double dy = 0.0;
 	double dz = 0.0;
+	static float rotateX = -90;
+	static float rotateZ = 0;
+	static float zoom = 1;
+
 	// if true: initial map loaded relatively, if false use lat and lon as defined
 	boolean fetchLocationFirstAttempt = false;
 	private String prevLoc = "";
@@ -187,6 +198,9 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
+        
+        mDetector = new GestureDetectorCompat(this,this);
+        mScaleDetector = new ScaleGestureDetector(this, this);
 
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         mLoadingText = (TextView) findViewById(R.id.loading_text);
@@ -217,7 +231,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 	    calendarview.setVisibility(View.INVISIBLE);
 	    navigationview.setVisibility(View.INVISIBLE);
         
-	    mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
         mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		//mViewPager.setAdapter(mSectionsPagerAdapter);
@@ -261,42 +274,27 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
                 		Toast.LENGTH_SHORT).show();
                 
                 if (modeStatus == modes.modeWorld.ordinal()) {
-                	if (!rendererSet) {
-            			view.addView(glSurfaceView);
-            			rendererSet = true;
-                	}
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
         			navigationview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
-                	if (rendererSet) {
-            			view.removeView(glSurfaceView);
-            			rendererSet = false;
-                	}
-                	mSectionsPagerAdapter.notifyDataSetChanged();
-                	mViewPager.setAdapter(mSectionsPagerAdapter);                	
-                	mViewPager.setVisibility(View.VISIBLE);
-        			mViewPager.setCurrentItem(0);
+                	mViewPager.setVisibility(View.INVISIBLE);
             		calendarview.setVisibility(View.INVISIBLE);
             		navigationview.setVisibility(View.INVISIBLE);
                 }                
                 else if (modeStatus == modes.modeApprentice.ordinal()) {
-                	if (rendererSet) {
-            			view.removeView(glSurfaceView);
-            			rendererSet = false;            			
-                	}
                 	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
                 	mViewPager.setVisibility(View.VISIBLE);
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
             		navigationview.setVisibility(View.INVISIBLE);
                 }
+                else if (modeStatus == modes.modeNavigation.ordinal()) {
+                	mViewPager.setVisibility(View.INVISIBLE);
+        			calendarview.setVisibility(View.INVISIBLE);
+                }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
-                	if (!rendererSet) {
-            			view.addView(glSurfaceView);
-            			rendererSet = true;
-                	}
                 	mViewPager.setVisibility(View.INVISIBLE);
                 	calendarview.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.VISIBLE);
@@ -337,7 +335,8 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 				else {
 					Toast.makeText(calendarview.getContext(), "Available Unchecked", Toast.LENGTH_SHORT).show();
 					available = false;
-				}				
+				}
+				//updateDeviceStatus();
 			}
 		});
         
@@ -351,7 +350,8 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 				else {
 					Toast.makeText(calendarview.getContext(), "Occupied Unchecked", Toast.LENGTH_SHORT).show();
 					occupied = false;
-				}				
+				}
+				//updateDeviceStatus();
 			}
 		});
         
@@ -609,59 +609,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
 		}	
 	};
 	
-	public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
-
-		public SectionsPagerAdapter(FragmentManager fm) {
-			super(fm);
-		}
-
-		@Override
-		public Fragment getItem(int position) {
-			return PlaceholderFragment.newInstance(position + 1);
-		}
-
-		@Override
-		public int getCount() {
-			return 5;
-		}
-	}
-
-	public static class PlaceholderFragment extends Fragment {
-		private static final String ARG_SECTION_NUMBER = "section_number";
-
-		public static PlaceholderFragment newInstance(int sectionNumber) {
-			PlaceholderFragment fragment = new PlaceholderFragment();
-			Bundle args = new Bundle();
-			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-			fragment.setArguments(args);
-			return fragment;
-		}
-
-		public PlaceholderFragment() {
-		}
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-			View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-			int sectionNum = getArguments().getInt(ARG_SECTION_NUMBER);
-			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-			textView.setText(Integer.toString(sectionNum));
-			
-			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
-			
-			if (sectionNum == 1)
-				imgView.setImageResource(R.drawable.product1);
-			else if (sectionNum == 2)
-				imgView.setImageResource(R.drawable.product2);
-			else if (sectionNum == 3)
-				imgView.setImageResource(R.drawable.product3);
-			else if (sectionNum == 4)
-				imgView.setImageResource(R.drawable.product4);
-			else if (sectionNum == 5)
-				imgView.setImageResource(R.drawable.product5);
-			return rootView;
-		}
-	}
 	
 	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
 
@@ -739,4 +686,75 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
         listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
         deviceDataChild.put(deviceDataHeader.get(0), devicegroup);
     }
+
+	@Override 
+    public boolean onTouchEvent(MotionEvent event){ 
+		boolean res = this.mScaleDetector.onTouchEvent(event);
+		boolean isScaling = res = mScaleDetector.isInProgress();
+		if (!isScaling)
+			res = this.mDetector.onTouchEvent(event);
+        return res? res : super.onTouchEvent(event);
+    }
+	 
+	@Override
+	public boolean onDown(MotionEvent arg0) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean onFling(MotionEvent arg0, MotionEvent arg1, float arg2,
+			float arg3) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void onLongPress(MotionEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean onScroll(MotionEvent e1, MotionEvent e2, final float distanceX,
+            final float distanceY) {
+		// TODO Auto-generated method stub
+		Log.d("DEBUG", "onScroll: " + e1.toString()+e2.toString());
+		if (Math.abs(distanceX) > Math.abs(distanceY))
+			rotateZ = (rotateZ - distanceX) % 360;
+		else
+			rotateX = (rotateX - distanceY) % 360;
+		return true;
+	}
+
+	@Override
+	public void onShowPress(MotionEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean onSingleTapUp(MotionEvent arg0) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean onScale(ScaleGestureDetector detector) {
+		// TODO Auto-generated method stub
+		zoom = 1/detector.getScaleFactor();
+		return false;
+	}
+
+	@Override
+	public boolean onScaleBegin(ScaleGestureDetector detector) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void onScaleEnd(ScaleGestureDetector detector) {
+		// TODO Auto-generated method stub
+		
+	}
 }

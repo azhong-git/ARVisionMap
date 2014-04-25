@@ -18,7 +18,7 @@
 	        android:id="@+id/loading_text"
 	        android:layout_height="wrap_content"
 	        android:layout_width="wrap_content"
-	        android:text="Loading..."
+	        android:text="@string/loading_string"
 	        android:textColor="#ffffff"
 	        android:layout_gravity="center"
 	        android:textSize="60sp"> 
@@ -48,20 +48,20 @@
 		    android:id="@+id/checkbox_scheduled"
 		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
-		    android:text="Scheduled Soon"
+		    android:text="@string/cb_scheduled"
 		    android:layout_gravity="bottom|left" />
 		<CheckBox
 		    android:id="@+id/checkbox_occupied"
 		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
-		    android:text="Occupied"		    
+		    android:text="@string/cb_occupied"		    
 		    android:layout_gravity="bottom|left"
 		    android:layout_marginBottom="40dp" />
 		<CheckBox
 		    android:id="@+id/checkbox_available"
 		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
-		    android:text="Available"
+		    android:text="@string/cb_available"
 		    android:layout_gravity="bottom|left"
 		    android:layout_marginBottom="80dp" />
     </FrameLayout>
