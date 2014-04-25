@@ -1,8 +1,6 @@
 package com.example.augmentedreality;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,7 +30,6 @@ import org.opencv.core.Mat;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.content.Context;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -62,7 +59,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.detection.DetectionBasedTracker;
 import com.example.openglbasics.R;
 
 public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, 
@@ -91,10 +87,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	private int mCameraIndex = 0;
 	
 	// OpenCV objection detection	
-	private Mat mRgba;
-	private Mat mGray;
-	private File mCascadeFile;
-	private static final String TAG = "ARVision::Activity";
+	private Mat mRgba, mGray, mHSV, mThresh;
 	
 	// OpenGL layout
 	FrameLayout view;
@@ -151,27 +144,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS:
                 {
-                    System.loadLibrary("detection_based_tracker");
-                	try {
-                		InputStream is = getResources().openRawResource(R.raw.surf10_80_40);
-                		File cascadeDir = getDir("cascade", Context.MODE_PRIVATE);
-                		mCascadeFile = new File(cascadeDir, "surf10_80_40.xml");
-                		FileOutputStream os = new FileOutputStream(mCascadeFile);
-                		
-                		byte [] buffer = new byte [4096];
-                		int bytesRead;
-                		while ((bytesRead = is.read(buffer)) != -1) {
-                			os.write(buffer, 0, bytesRead);
-                		}
-                		is.close();
-                		os.close();
-                	 
-                		new DetectionBasedTracker(mCascadeFile.getAbsolutePath(), 0);
-                		cascadeDir.delete();
-                	}
-                	catch (IOException e){
-                		Log.e(TAG, "Cannot load cascade, IOException!");
-                	}
                     mCameraView.enableView();
                 } break;
                 default:
@@ -248,10 +220,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
                 }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
-                	calendarview.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.VISIBLE);
         			calendarview.bringToFront();
-                }                
+                }
                 menuview.collapseGroup(groupPosition);
                 return true;
             }
@@ -355,16 +326,18 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
             mCameraView.disableView();
     }
     
-    
     public void onCameraViewStarted(int width, int height) {
         mGray = new Mat();
         mRgba = new Mat();
+        mHSV = new Mat();
+        mThresh = new Mat();
     }
     
-
     public void onCameraViewStopped() {
         mGray.release();
         mRgba.release();
+        mHSV.release();
+        mThresh.release();
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
@@ -452,8 +425,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
             Toast.makeText(this, "Failed to retrive rotation Matrix", Toast.LENGTH_LONG).show();
             //sensorAvailable = false;
         }
-	}
-	
+	}	
     
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // Do nothing
@@ -614,7 +586,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         modegroup.add("Apprentice");
         modegroup.add("Navigation");
         modegroup.add("Calendar");
- 
+        modegroup.add("Test Marker Detection");
+        
         listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
     }
 
