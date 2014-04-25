@@ -44,14 +44,13 @@ import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
-import android.view.ScaleGestureDetector.OnScaleGestureListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.GestureDetector;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -107,7 +106,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     // check boxes
     CheckBox check_available, check_occupied, check_scheduled;
     
-    SectionsPagerAdapter mSectionsPagerAdapter;
     SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
 	
@@ -220,7 +218,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	    occupied = false;
 	    calendarview.setVisibility(View.INVISIBLE);
         
-	    mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
         mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		//mViewPager.setAdapter(mSectionsPagerAdapter);
@@ -236,57 +233,33 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
                 
                 if (modeStatus == modes.modeWorld.ordinal()) {
                 	mode = 0;
-                	/*if (!rendererSet) {
-            			view.addView(glSurfaceView);
-            			rendererSet = true;
-                	}*/
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
-                	/*if (rendererSet) {
-            			view.removeView(glSurfaceView);
-            			rendererSet = false;
-                	}*/
                 	mode = 1;
-                	/*mSectionsPagerAdapter.notifyDataSetChanged();
-                	mViewPager.setAdapter(mSectionsPagerAdapter);                	
-                	mViewPager.setVisibility(View.VISIBLE);
-        			mViewPager.setCurrentItem(0);*/
                 	mViewPager.setVisibility(View.INVISIBLE);
             		calendarview.setVisibility(View.INVISIBLE);
                 }                
                 else if (modeStatus == modes.modeApprentice.ordinal()) {
                 	mode = 2;
-                	/*if (rendererSet) {
-            			view.removeView(glSurfaceView);
-            			rendererSet = false;            			
-                	}*/
                 	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
                 	mViewPager.setVisibility(View.VISIBLE);
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
                 }
+                else if (modeStatus == modes.modeNavigation.ordinal()) {
+                	mode = 3;
+                	mViewPager.setVisibility(View.INVISIBLE);
+        			calendarview.setVisibility(View.INVISIBLE);
+                }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
                 	mode = 4;
-                	/*if (!rendererSet) {
-            			view.addView(glSurfaceView);
-            			rendererSet = true;
-                	}*/
                 	mViewPager.setVisibility(View.INVISIBLE);
                 	calendarview.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.VISIBLE);
         			calendarview.bringToFront();
-                }
-                else if (modeStatus == modes.modeNavigation.ordinal()) {
-                	mode = 3;
-                	/*if (!rendererSet) {
-            			view.addView(glSurfaceView);
-            			rendererSet = true;
-                	}*/
-                	mViewPager.setVisibility(View.INVISIBLE);
-        			calendarview.setVisibility(View.INVISIBLE);
-                }
+                }                
                 menuview.collapseGroup(groupPosition);
                 return true;
             }
@@ -584,61 +557,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		}	
 	};
 
-	
-	public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
-
-		public SectionsPagerAdapter(FragmentManager fm) {
-			super(fm);
-		}
-
-		@Override
-		public Fragment getItem(int position) {
-			return PlaceholderFragment.newInstance(position + 1);
-		}
-
-		@Override
-		public int getCount() {
-			return 5;
-		}
-	}
-
-	public static class PlaceholderFragment extends Fragment {
-		private static final String ARG_SECTION_NUMBER = "section_number";
-
-		public static PlaceholderFragment newInstance(int sectionNumber) {
-			PlaceholderFragment fragment = new PlaceholderFragment();
-			Bundle args = new Bundle();
-			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-			fragment.setArguments(args);
-			return fragment;
-		}
-
-		public PlaceholderFragment() {
-		}
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-			View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-			int sectionNum = getArguments().getInt(ARG_SECTION_NUMBER);
-			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-			textView.setText(Integer.toString(sectionNum));
-			
-			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
-			
-			if (sectionNum == 1)
-				imgView.setImageResource(R.drawable.product1);
-			else if (sectionNum == 2)
-				imgView.setImageResource(R.drawable.product2);
-			else if (sectionNum == 3)
-				imgView.setImageResource(R.drawable.product3);
-			else if (sectionNum == 4)
-				imgView.setImageResource(R.drawable.product4);
-			else if (sectionNum == 5)
-				imgView.setImageResource(R.drawable.product5);
-			
-			return rootView;
-		}
-	}
 	
 	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
 

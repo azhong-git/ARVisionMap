@@ -3,8 +3,6 @@ package com.example.objects;
 import static android.opengl.GLES20.GL_BACK;
 import static android.opengl.GLES20.GL_CCW;
 import static android.opengl.GLES20.GL_CULL_FACE;
-import static android.opengl.GLES20.GL_DEPTH_TEST;
-import static android.opengl.GLES20.GL_FRONT_AND_BACK;
 import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.glCullFace;
 import static android.opengl.GLES20.glDrawArrays;
@@ -18,10 +16,8 @@ import java.util.Scanner;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.opengl.GLES20;
 
 import com.example.data.VertexArray;
-import com.example.util.ObjectShaderProgram;
 import com.example.util.VertexObjectShaderProgram;
 
 public class RawVertexObject {

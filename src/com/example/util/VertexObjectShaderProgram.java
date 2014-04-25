@@ -2,12 +2,11 @@ package com.example.util;
 
 import static android.opengl.GLES20.glGetAttribLocation;
 import static android.opengl.GLES20.glGetUniformLocation;
-import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform4f;
 import static android.opengl.GLES20.glUniformMatrix4fv;
+import android.content.Context;
 
 import com.example.openglbasics.R;
-import android.content.Context;
 
 public class VertexObjectShaderProgram extends Program {
 	private final int uMatrixLocation;

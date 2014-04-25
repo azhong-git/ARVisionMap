@@ -14,8 +14,8 @@
 	    android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
 	    android:adjustViewBounds="true"
-	    android:contentDescription="Products" />
-    
+	    android:contentDescription="@string/view_pager_string" />
+        
     <TextView
         android:id="@+id/section_label"
         android:layout_width="wrap_content"
