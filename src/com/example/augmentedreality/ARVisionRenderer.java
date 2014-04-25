@@ -2,17 +2,13 @@ package com.example.augmentedreality;
 
 import static android.opengl.GLES20.GL_BLEND;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
-import static android.opengl.GLES20.GL_CULL_FACE;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_TEST;
-import static android.opengl.GLES20.GL_FRONT;
-import static android.opengl.GLES20.GL_FRONT_AND_BACK;
 import static android.opengl.GLES20.GL_ONE;
 import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
-import static android.opengl.GLES20.glCullFace;
 import static android.opengl.GLES20.glEnable;
 import static android.opengl.GLES20.glViewport;
 import static android.opengl.Matrix.multiplyMM;

@@ -116,7 +116,6 @@ public class ARVIsionActivity extends Activity implements CvCameraViewListener2,
     public static boolean sensorAvailable = false;
     public Timer timer;
     public long timerInterval = 5000l;
-    private boolean mLoading = false;
     
     private boolean mFailed;
     
