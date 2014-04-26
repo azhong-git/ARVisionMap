@@ -212,21 +212,25 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
             		calendarview.setVisibility(View.INVISIBLE);
+            		mCameraView.setVisibility(View.INVISIBLE); 
                 }                
                 else if (modeStatus == modes.modeApprentice.ordinal()) {
                 	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
                 	mViewPager.setVisibility(View.VISIBLE);
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
+            		mCameraView.setVisibility(View.INVISIBLE); 
                 }
                 else if (modeStatus == modes.modeNavigation.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
+        			mCameraView.setVisibility(View.VISIBLE); 
                 }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.VISIBLE);
         			calendarview.bringToFront();
+        			mCameraView.setVisibility(View.VISIBLE); 
                 }
                 menuview.collapseGroup(groupPosition);
                 return true;
