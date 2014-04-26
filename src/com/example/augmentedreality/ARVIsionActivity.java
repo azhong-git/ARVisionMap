@@ -73,6 +73,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     static public enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
 	static public int modeStatus;
     
+	static public enum devices {ThreeDPrinter, LaserCutter}; 
+	static public int currentDevice;
+	
     // calendar
     boolean available, scheduled, occupied;
 	    
@@ -178,6 +181,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         // setting list adapter
         menuview.setAdapter(listAdapter);        
         modeStatus = modes.modeWorld.ordinal();
+        
+        currentDevice = devices.ThreeDPrinter.ordinal();
                 
         check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
         check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
@@ -523,7 +528,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	
 	
 	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
-
+		
+		public int noOfStepsFor3DPrinter = 3;
+		public int noOfStepsForLaserCutter = 4;
 		public SectionsPagerAdapterApprentice(FragmentManager fm) {
 			super(fm);
 		}
@@ -535,7 +542,12 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 
 		@Override
 		public int getCount() {
-			return 3;
+			if (currentDevice == devices.ThreeDPrinter.ordinal())
+				return noOfStepsFor3DPrinter;
+			else if (currentDevice == devices.ThreeDPrinter.ordinal())
+				return noOfStepsForLaserCutter;
+			else
+				return 0;
 		}
 	}
 
@@ -562,12 +574,25 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			
 			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
 			
-			if (sectionNum == 1)
-				imgView.setImageResource(R.drawable.step1);
-			else if (sectionNum == 2)
-				imgView.setImageResource(R.drawable.step2);
-			else if (sectionNum == 3)
-				imgView.setImageResource(R.drawable.step3);
+			// Need a better way of dynamically reading images
+			if (currentDevice == devices.ThreeDPrinter.ordinal()) {
+				if (sectionNum == 1)
+					imgView.setImageResource(R.drawable.step1);
+				else if (sectionNum == 2)
+					imgView.setImageResource(R.drawable.step2);
+				else if (sectionNum == 3)
+					imgView.setImageResource(R.drawable.step3);
+			}
+			else if (currentDevice == devices.LaserCutter.ordinal()) {
+				if (sectionNum == 1)
+					imgView.setImageResource(R.drawable.step1);
+				else if (sectionNum == 2)
+					imgView.setImageResource(R.drawable.step2);
+				else if (sectionNum == 3)
+					imgView.setImageResource(R.drawable.step3);
+				else if (sectionNum == 4)
+					imgView.setImageResource(R.drawable.step2);
+			}
 			return rootView;
 		}
 	}	
@@ -586,7 +611,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         modegroup.add("Apprentice");
         modegroup.add("Navigation");
         modegroup.add("Calendar");
-        modegroup.add("Test Marker Detection");
         
         listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
     }
