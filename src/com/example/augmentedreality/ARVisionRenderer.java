@@ -162,7 +162,7 @@ public class ARVisionRenderer implements Renderer {
 		// reading parameters from input map
 		numCaptions = TextResourceReader.readNextInt(scan);
 		numRawObjects = TextResourceReader.readNextInt(scan);
-		numArrows = TextResourceReader.readNextInt(scan);
+		numArrows = numRawObjects; //TextResourceReader.readNextInt(scan);
 		numObjects = numCaptions + numRawObjects + numArrows;
 		numTextures = numCaptions + numRawObjects;
 		
@@ -358,12 +358,29 @@ public class ARVisionRenderer implements Renderer {
 				object[i-numCaptions].bindData(objectProgram);
 				object[i-numCaptions].draw();
 			}
-			colorProgram.useProgram();
-			for (; i < numObjects; i++) {
-				colorProgram.setUniforms(finalMatrix[i], arrowPallette[arrowColor[i-numTextures]][0], 
-						arrowPallette[arrowColor[i-numTextures]][1], arrowPallette[arrowColor[i-numTextures]][2], 0.6f);
-				arrow[i-numTextures].bindData(colorProgram);
-				arrow[i-numTextures].draw();
+			
+			if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeCalendar.ordinal()) {
+				int selectedObjs[] = {0, 0, 0};
+				if (ARVIsionActivity.available) {					
+					selectedObjs[0] = 1;
+				}
+				if (ARVIsionActivity.occupied) {					
+					selectedObjs[1] = 1;
+				}
+				if (ARVIsionActivity.scheduled) {					
+					selectedObjs[2] = 1;
+				}
+			
+				colorProgram.useProgram();
+				for (i = 0; i < numArrows; i++) {
+					if (selectedObjs[arrowColor[i]] == 1) {
+						colorProgram.setUniforms(finalMatrix[i+numTextures], arrowPallette[arrowColor[i]][0], 
+								arrowPallette[arrowColor[i]][1], 
+								arrowPallette[arrowColor[i]][2], 0.6f);
+						arrow[i].bindData(colorProgram);
+						arrow[i].draw();
+					}
+				}
 			}
 			
 			transparentProgram.useProgram();

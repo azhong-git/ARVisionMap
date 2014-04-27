@@ -87,7 +87,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	static public int prototypeStatus;
 	
     // calendar
-    boolean available, scheduled, occupied;
+    static public boolean available, scheduled, occupied;
 	    
 	// OpenGL content view
 	private GLSurfaceView glSurfaceView;
@@ -318,14 +318,11 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			@Override
 			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
 				if (arg1) {
-					Toast.makeText(calendarview.getContext(), "Available Checked", Toast.LENGTH_SHORT).show();
 					available = true;
 				}
 				else {
-					Toast.makeText(calendarview.getContext(), "Available Unchecked", Toast.LENGTH_SHORT).show();
 					available = false;
 				}
-				//updateDeviceStatus();
 			}
 		});
         
@@ -333,14 +330,11 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			@Override
 			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
 				if (arg1) {
-					Toast.makeText(calendarview.getContext(), "Occupied Checked", Toast.LENGTH_SHORT).show();
 					occupied = true;
 				}
 				else {
-					Toast.makeText(calendarview.getContext(), "Occupied Unchecked", Toast.LENGTH_SHORT).show();
 					occupied = false;
 				}
-				//updateDeviceStatus();
 			}
 		});
         
@@ -348,11 +342,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			@Override
 			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
 				if (arg1) {
-					Toast.makeText(calendarview.getContext(), "Scheduled Checked", Toast.LENGTH_SHORT).show();
 					scheduled = true;
 				}
 				else {
-					Toast.makeText(calendarview.getContext(), "Scheduled Unchecked", Toast.LENGTH_SHORT).show();
 					scheduled = false;
 				}				
 			}
@@ -422,11 +414,12 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     	mRgba = inputFrame.rgba();
     	mGray = inputFrame.gray();
     	    	
-        if (ARVisionRenderer.GLStatus == ARVisionRenderer.GraphicsStatus.Loading) {
+        if (ARVisionRenderer.GLStatus == ARVisionRenderer.GraphicsStatus.Loading) {        	
         	runOnUiThread(new Runnable() {
 				@Override
 				public void run() {						
-					mLoadingText.setVisibility(View.VISIBLE);				
+					mLoadingText.setVisibility(View.VISIBLE);
+					menuview.setVisibility(View.INVISIBLE);
 				}
 			});
         }
@@ -434,7 +427,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         	runOnUiThread(new Runnable() {
 				@Override
 				public void run() {						
-					mLoadingText.setVisibility(View.INVISIBLE);				
+					mLoadingText.setVisibility(View.INVISIBLE);	
+					menuview.setVisibility(View.VISIBLE);
 				}
 			});
         }
