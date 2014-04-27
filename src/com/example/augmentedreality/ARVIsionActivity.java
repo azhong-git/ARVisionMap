@@ -222,7 +222,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         
         mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
-		//mViewPager.setAdapter(mSectionsPagerAdapter);
 		mViewPager.setVisibility(View.INVISIBLE);
 		
 		deviceview.setOnChildClickListener(new OnChildClickListener() {
