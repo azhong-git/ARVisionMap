@@ -98,6 +98,6 @@
             android:textStyle="bold"
             android:textColor="#ffffff"
             android:background="@android:color/transparent"
-            android:text="Next" />
+            android:text="@string/next_prototype" />
     </FrameLayout>
 </RelativeLayout>

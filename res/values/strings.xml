@@ -8,4 +8,5 @@
 	<string name="cb_scheduled">Scheduled soon</string>
 	<string name="cb_occupied">Occupied</string>
 	<string name="cb_available">Available</string>
+	<string name="next_prototype">Next</string>
 </resources>
