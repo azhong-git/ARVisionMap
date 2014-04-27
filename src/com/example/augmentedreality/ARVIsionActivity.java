@@ -48,6 +48,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -73,8 +74,17 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     static public enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
 	static public int modeStatus;
     
-	static public enum devices {ThreeDPrinter, LaserCutter}; 
+	// expandable list view for navigation mode
+	ExpandableListAdapter deviceListAdapter;
+	ExpandableListView deviceview;
+    List<String> deviceDataHeader;
+    HashMap<String, List<String>> deviceDataChild;
+    static public enum devices {Scanner, Afinia, ProJet, PhotoStudio}; 
 	static public int currentDevice;
+	
+	// sample for visitor mode
+	static public enum prototype {TRex, Rex};
+	static public int prototypeStatus;
 	
     // calendar
     boolean available, scheduled, occupied;
@@ -94,13 +104,20 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	
 	// OpenGL layout
 	FrameLayout view;
+	// control panel for visitor mode
+	FrameLayout visitorview;
 	// control panel for calendar mode
 	FrameLayout calendarview;
+	// control panel for navigation mode
+	FrameLayout navigationview;		
     // Loading text
     TextView mLoadingText;
     
     // check boxes
     CheckBox check_available, check_occupied, check_scheduled;
+    
+    // button
+    Button next_prototype;
     
     SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
@@ -170,19 +187,28 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         mLoadingText = (TextView) findViewById(R.id.loading_text);
         
-        /////////
+        // get control panel views
+        visitorview = (FrameLayout) findViewById(R.id.visitor_control_overlay);
         calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
+        navigationview = (FrameLayout) findViewById(R.id.navigation_control_overlay);
         
         // get the listview
         menuview = (ExpandableListView) findViewById(R.id.expandableListView);
+        deviceview = (ExpandableListView) findViewById(R.id.deviceExpandableListView);
         // preparing list data
         prepareListData();
         listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild); 
+        deviceListAdapter = new ExpandableListAdapter(this, deviceDataHeader, deviceDataChild);
         // setting list adapter
         menuview.setAdapter(listAdapter);        
         modeStatus = modes.modeWorld.ordinal();
+
+        deviceview.setAdapter(deviceListAdapter);
+		currentDevice = devices.Afinia.ordinal();
         
-        currentDevice = devices.ThreeDPrinter.ordinal();
+        // initiate prototype status;
+        prototypeStatus = prototype.TRex.ordinal();
+        next_prototype = (Button) findViewById(R.id.nextPrototypeButton);
                 
         check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
         check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
@@ -191,11 +217,42 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	    scheduled = false;
 	    occupied = false;
 	    calendarview.setVisibility(View.INVISIBLE);
+	    navigationview.setVisibility(View.INVISIBLE);
+	    visitorview.setVisibility(View.INVISIBLE);
         
         mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		//mViewPager.setAdapter(mSectionsPagerAdapter);
 		mViewPager.setVisibility(View.INVISIBLE);
+		
+		deviceview.setOnChildClickListener(new OnChildClickListener() {
+
+			@Override
+			public boolean onChildClick(ExpandableListView parent, View v,
+					int groupPosition, int childPosition, long id) {
+				// TODO Auto-generated method stub
+				currentDevice = childPosition;
+				Toast.makeText(getApplicationContext(), deviceDataHeader.get(groupPosition)+" : "+deviceDataChild.get(deviceDataHeader.get(groupPosition)).get(childPosition), 
+                		Toast.LENGTH_SHORT).show();
+				
+				if (currentDevice == devices.Scanner.ordinal()) {
+					// render direction arrows or signs to 3D scanner
+				}
+				else if (currentDevice == devices.Afinia.ordinal()) {
+					// render direction arrows or signs to Afinia H-series (the small 3D printer)
+				}
+				else if (currentDevice == devices.ProJet.ordinal()) {
+					// render direction arrows or signs to ProJet 3000 (the large 3D printer)
+				}
+				else if (currentDevice == devices.PhotoStudio.ordinal()) {
+					// render direction arrows or signs to Product Photo Studio
+				}
+				// directions for other devices can be added
+				deviceview.collapseGroup(groupPosition);
+				return false;
+			}
+			
+		});
 		
         menuview.setOnChildClickListener(new OnChildClickListener() {
         	@Override
@@ -208,11 +265,16 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
                 if (modeStatus == modes.modeWorld.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
+        			navigationview.setVisibility(View.INVISIBLE);
+        			visitorview.setVisibility(View.INVISIBLE);
+        			mCameraView.setVisibility(View.VISIBLE);
                 }
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
             		calendarview.setVisibility(View.INVISIBLE);
             		mCameraView.setVisibility(View.INVISIBLE); 
+            		navigationview.setVisibility(View.INVISIBLE);
+            		visitorview.setVisibility(View.VISIBLE);
                 }                
                 else if (modeStatus == modes.modeApprentice.ordinal()) {
                 	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
@@ -220,17 +282,24 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         			mViewPager.setCurrentItem(0);
             		calendarview.setVisibility(View.INVISIBLE);
             		mCameraView.setVisibility(View.INVISIBLE); 
+            		visitorview.setVisibility(View.INVISIBLE);
+            		navigationview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeNavigation.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.INVISIBLE);
         			mCameraView.setVisibility(View.VISIBLE); 
+            		navigationview.setVisibility(View.VISIBLE);
+            		navigationview.bringToFront();
+            		visitorview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
         			calendarview.setVisibility(View.VISIBLE);
         			calendarview.bringToFront();
         			mCameraView.setVisibility(View.VISIBLE); 
+        			navigationview.setVisibility(View.INVISIBLE);
+        			visitorview.setVisibility(View.INVISIBLE);
                 }
                 menuview.collapseGroup(groupPosition);
                 return true;
@@ -533,8 +602,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	
 	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
 		
-		public int noOfStepsFor3DPrinter = 3;
-		public int noOfStepsForLaserCutter = 4;
+		public int noOfStepsForAfinia = 3;
+		public int noOfStepsForScanner= 4;
 		public SectionsPagerAdapterApprentice(FragmentManager fm) {
 			super(fm);
 		}
@@ -546,10 +615,10 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 
 		@Override
 		public int getCount() {
-			if (currentDevice == devices.ThreeDPrinter.ordinal())
-				return noOfStepsFor3DPrinter;
-			else if (currentDevice == devices.ThreeDPrinter.ordinal())
-				return noOfStepsForLaserCutter;
+			if (currentDevice == devices.Afinia.ordinal())
+				return noOfStepsForAfinia;
+			else if (currentDevice == devices.Scanner.ordinal())
+				return noOfStepsForScanner;
 			else
 				return 0;
 		}
@@ -579,7 +648,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
 			
 			// Need a better way of dynamically reading images
-			if (currentDevice == devices.ThreeDPrinter.ordinal()) {
+			if (currentDevice == devices.Afinia.ordinal()) {
 				if (sectionNum == 1)
 					imgView.setImageResource(R.drawable.step1);
 				else if (sectionNum == 2)
@@ -587,7 +656,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				else if (sectionNum == 3)
 					imgView.setImageResource(R.drawable.step3);
 			}
-			else if (currentDevice == devices.LaserCutter.ordinal()) {
+			else if (currentDevice == devices.Scanner.ordinal()) {
 				if (sectionNum == 1)
 					imgView.setImageResource(R.drawable.step1);
 				else if (sectionNum == 2)
@@ -604,9 +673,12 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	private void prepareListData() {
         listDataHeader = new ArrayList<String>();
         listDataChild = new HashMap<String, List<String>>();
- 
+        deviceDataHeader = new ArrayList<String>();
+        deviceDataChild = new HashMap<String, List<String>>();
+        
         // Adding child data
         listDataHeader.add("Mode Selection");
+        deviceDataHeader.add("Device Selection");
  
         // Adding child data
         List<String> modegroup = new ArrayList<String>();
@@ -615,10 +687,33 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         modegroup.add("Apprentice");
         modegroup.add("Navigation");
         modegroup.add("Calendar");
-        
+
+        List<String> devicegroup = new ArrayList<String>();
+        devicegroup.add("3D Scanner");
+        devicegroup.add("Afinia H-series");
+        devicegroup.add("ProJet 3000");
+        devicegroup.add("Product Photo Studio");
+ 
         listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
+        deviceDataChild.put(deviceDataHeader.get(0), devicegroup);
     }
 
+	// button click event
+	public void myButtonClickHandler(View view) {
+        switch (view.getId()) {
+        case R.id.nextPrototypeButton:
+        	if (currentDevice == devices.Afinia.ordinal()) {
+	        	if (prototypeStatus == prototype.TRex.ordinal()) {
+	        		prototypeStatus = prototype.Rex.ordinal();
+	        	}
+	        	else {
+	        		prototypeStatus = prototype.TRex.ordinal();
+	        	}
+        	}
+            break;
+        }
+    }
+	
 	@Override 
     public boolean onTouchEvent(MotionEvent event){ 
 		boolean res = this.mScaleDetector.onTouchEvent(event);
