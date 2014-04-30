@@ -79,11 +79,11 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	ExpandableListView deviceview;
     List<String> deviceDataHeader;
     HashMap<String, List<String>> deviceDataChild;
-    static public enum devices {Scanner, Afinia, ProJet, PhotoStudio}; 
+    static public enum devices {Scanner, Afinia, ProJet, PhotoStudio, VLSLaserCutter, PowerElectronics}; 
 	static public int currentDevice;
 	
 	// sample for visitor mode
-	static public enum prototype {TRex, Rex};
+	static public enum prototype {TRex, Prototype1, Prototype2};
 	static public int prototypeStatus;
 	
     // calendar
@@ -118,6 +118,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     
     // button
     Button next_prototype;
+    Button last_prototype;
     
     SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
@@ -209,6 +210,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         // initiate prototype status;
         prototypeStatus = prototype.TRex.ordinal();
         next_prototype = (Button) findViewById(R.id.nextPrototypeButton);
+        last_prototype = (Button) findViewById(R.id.lastPrototypeButton);
                 
         check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
         check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
@@ -235,16 +237,19 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				Toast.makeText(getApplicationContext(), deviceDataHeader.get(groupPosition)+" : "+deviceDataChild.get(deviceDataHeader.get(groupPosition)).get(childPosition), 
                 		Toast.LENGTH_SHORT).show();
 				
-				if (currentDevice == devices.Scanner.ordinal()) {
-					// render direction arrows or signs to 3D scanner
-				}
-				else if (currentDevice == devices.Afinia.ordinal()) {
+				if (currentDevice == devices.Afinia.ordinal()) {
 					// render direction arrows or signs to Afinia H-series (the small 3D printer)
 				}
 				else if (currentDevice == devices.ProJet.ordinal()) {
 					// render direction arrows or signs to ProJet 3000 (the large 3D printer)
 				}
 				else if (currentDevice == devices.PhotoStudio.ordinal()) {
+					// render direction arrows or signs to Product Photo Studio
+				}
+				else if (currentDevice == devices.VLSLaserCutter.ordinal()) {
+					// render direction arrows or signs to 3D scanner
+				}
+				else if (currentDevice == devices.PowerElectronics.ordinal()) {
 					// render direction arrows or signs to Product Photo Studio
 				}
 				// directions for other devices can be added
@@ -272,7 +277,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
             		calendarview.setVisibility(View.INVISIBLE);
-            		mCameraView.setVisibility(View.INVISIBLE); 
+            		mCameraView.setVisibility(View.VISIBLE); 
             		navigationview.setVisibility(View.INVISIBLE);
             		visitorview.setVisibility(View.VISIBLE);
                 }                
@@ -693,6 +698,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         devicegroup.add("Afinia H-series");
         devicegroup.add("ProJet 3000");
         devicegroup.add("Product Photo Studio");
+        devicegroup.add("VLS Laser Cutter");
+        devicegroup.add("Power Electronics");
  
         listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
         deviceDataChild.put(deviceDataHeader.get(0), devicegroup);
@@ -703,11 +710,21 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         switch (view.getId()) {
         case R.id.nextPrototypeButton:
         	if (currentDevice == devices.Afinia.ordinal()) {
-	        	if (prototypeStatus == prototype.TRex.ordinal()) {
-	        		prototypeStatus = prototype.Rex.ordinal();
+	        	if (prototypeStatus == prototype.Prototype2.ordinal()) {
+	        		prototypeStatus = prototype.TRex.ordinal();
 	        	}
 	        	else {
-	        		prototypeStatus = prototype.TRex.ordinal();
+	        		prototypeStatus++;
+	        	}
+        	}
+            break;
+        case R.id.lastPrototypeButton:
+        	if (currentDevice == devices.Afinia.ordinal()) {
+	        	if (prototypeStatus == prototype.TRex.ordinal()) {
+	        		prototypeStatus = prototype.Prototype2.ordinal();
+	        	}
+	        	else {
+	        		prototypeStatus--;
 	        	}
         	}
             break;

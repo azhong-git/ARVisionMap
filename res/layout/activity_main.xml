@@ -99,5 +99,18 @@
             android:textColor="#ffffff"
             android:background="@android:color/transparent"
             android:text="@string/next_prototype" />
+	    <Button
+            android:id="@+id/lastPrototypeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|left"
+            android:onClick="myButtonClickHandler"
+            android:layout_marginBottom="50dp"
+            android:layout_marginLeft="50dp"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#ffffff"
+            android:background="@android:color/transparent"
+            android:text="@string/last_prototype" />
     </FrameLayout>
 </RelativeLayout>
