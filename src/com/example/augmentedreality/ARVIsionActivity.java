@@ -692,8 +692,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         deviceDataChild = new HashMap<String, List<String>>();
         
         // Adding child data
-        listDataHeader.add("Mode Selection");
-        deviceDataHeader.add("Device Selection");
+        listDataHeader.add("Modes");
+        deviceDataHeader.add("Devices");
  
         // Adding child data
         List<String> modegroup = new ArrayList<String>();

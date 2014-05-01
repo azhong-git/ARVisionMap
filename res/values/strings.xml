@@ -9,5 +9,9 @@
 	<string name="cb_occupied">Occupied</string>
 	<string name="cb_available">Available</string>
 	<string name="next_prototype">Next</string>
-	<string name="last_prototype">Last</string>
+	<string name="prev_prototype">Previous</string>
+	<string name="search_view">Exit Gallery</string>
+	<string name="view_prototypes">Gallery</string>
+	<string name="device_in_view">Afinia H-series</string>
+	<string name="visitor_helper_text">You are looking at</string>
 </resources>
