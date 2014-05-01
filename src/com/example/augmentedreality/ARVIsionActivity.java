@@ -79,7 +79,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	ExpandableListView deviceview;
     List<String> deviceDataHeader;
     HashMap<String, List<String>> deviceDataChild;
-    static public enum devices {Scanner, Afinia, ProJet, PhotoStudio, VLSLaserCutter, PowerElectronics}; 
+    static public enum devices {Afinia, ProJet, PhotoStudio, VLSLaserCutter, PowerElectronics}; 
 	static public int currentDevice;
 	
 	// sample for visitor mode
@@ -618,7 +618,11 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
 		
 		public int noOfStepsForAfinia = 3;
-		public int noOfStepsForScanner= 4;
+		public int noOfStepsForLaserCutter = 4;
+		public int noOfStepsForProJet = 1;
+		public int noOfStepsForPhotoStudio = 1;
+		public int noOfStepsForPowerElectronics = 4;
+		
 		public SectionsPagerAdapterApprentice(FragmentManager fm) {
 			super(fm);
 		}
@@ -632,8 +636,14 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		public int getCount() {
 			if (currentDevice == devices.Afinia.ordinal())
 				return noOfStepsForAfinia;
-			else if (currentDevice == devices.Scanner.ordinal())
-				return noOfStepsForScanner;
+			else if (currentDevice == devices.VLSLaserCutter.ordinal())
+				return noOfStepsForLaserCutter;
+			else if (currentDevice == devices.PhotoStudio.ordinal())
+				return noOfStepsForPhotoStudio;
+			else if (currentDevice == devices.ProJet.ordinal())
+				return noOfStepsForProJet;
+			else if (currentDevice == devices.PowerElectronics.ordinal())
+				return noOfStepsForPowerElectronics;
 			else
 				return 0;
 		}
@@ -665,21 +675,39 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			// Need a better way of dynamically reading images
 			if (currentDevice == devices.Afinia.ordinal()) {
 				if (sectionNum == 1)
-					imgView.setImageResource(R.drawable.step1);
+					imgView.setImageResource(R.drawable.af_step1);
 				else if (sectionNum == 2)
-					imgView.setImageResource(R.drawable.step2);
+					imgView.setImageResource(R.drawable.af_step2);
 				else if (sectionNum == 3)
-					imgView.setImageResource(R.drawable.step3);
+					imgView.setImageResource(R.drawable.af_step3);
 			}
-			else if (currentDevice == devices.Scanner.ordinal()) {
+			else if (currentDevice == devices.VLSLaserCutter.ordinal()) {
 				if (sectionNum == 1)
-					imgView.setImageResource(R.drawable.step1);
+					imgView.setImageResource(R.drawable.lc_step1);
 				else if (sectionNum == 2)
-					imgView.setImageResource(R.drawable.step2);
+					imgView.setImageResource(R.drawable.lc_step2);
 				else if (sectionNum == 3)
-					imgView.setImageResource(R.drawable.step3);
+					imgView.setImageResource(R.drawable.lc_step3);
 				else if (sectionNum == 4)
-					imgView.setImageResource(R.drawable.step2);
+					imgView.setImageResource(R.drawable.lc_step4);
+			}
+			else if (currentDevice == devices.ProJet.ordinal()) {
+				if (sectionNum == 1)
+					imgView.setImageResource(R.drawable.pj_step1);
+			}
+			else if (currentDevice == devices.PhotoStudio.ordinal()) {
+				if (sectionNum == 1)
+					imgView.setImageResource(R.drawable.ps_step1);
+			}
+			else if (currentDevice == devices.PowerElectronics.ordinal()) {
+				if (sectionNum == 1)
+					imgView.setImageResource(R.drawable.pe_step1);
+				else if (sectionNum == 2)
+					imgView.setImageResource(R.drawable.pe_step2);
+				else if (sectionNum == 3)
+					imgView.setImageResource(R.drawable.pe_step3);
+				else if (sectionNum == 4)
+					imgView.setImageResource(R.drawable.pe_step4);
 			}
 			return rootView;
 		}
@@ -704,7 +732,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         modegroup.add("Calendar");
 
         List<String> devicegroup = new ArrayList<String>();
-        devicegroup.add("3D Scanner");
         devicegroup.add("Afinia H-series");
         devicegroup.add("ProJet 3000");
         devicegroup.add("Product Photo Studio");
