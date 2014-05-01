@@ -175,7 +175,7 @@ public class ARVisionRenderer implements Renderer {
 		// reading parameters from input map
 		numCaptions = TextResourceReader.readNextInt(scan);
 		numRawObjects = TextResourceReader.readNextInt(scan);
-		numArrows = numRawObjects; //TextResourceReader.readNextInt(scan);
+		numArrows = TextResourceReader.readNextInt(scan);
 		numObjects = numCaptions + numRawObjects + numArrows;
 		numTextures = numCaptions + numRawObjects;
 		
