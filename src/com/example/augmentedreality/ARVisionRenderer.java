@@ -26,6 +26,8 @@ import android.content.Context;
 import android.opengl.GLSurfaceView.Renderer;
 
 import com.example.objects.Arrow;
+import com.example.objects.Banner;
+import com.example.objects.BannerNon;
 import com.example.objects.Caption;
 import com.example.objects.RawObject;
 import com.example.objects.RawVertexObject;
@@ -63,6 +65,14 @@ public class ARVisionRenderer implements Renderer {
 	private float[] compassViewMatrix;
 	private float[] compassModelViewMatrix;
 	private float[] compassFinalMatrix;
+
+	// separate matrices for exhibits (compass never moves out of screen)
+	private float[] navigationModelMatrix;
+	private float[] navigationRotationMatrix;
+	private float[] navigationTranslationMatrix;
+	private float[] navigationViewMatrix;
+	private float[] navigationModelViewMatrix;
+	private float[] navigationFinalMatrix;
 	
 	// separate matrices for exhibits (compass never moves out of screen)
 	private float[] exhibitModelMatrix;
@@ -91,7 +101,8 @@ public class ARVisionRenderer implements Renderer {
 	private float [][] objRot;
 
 	private final float zcompass = 1f;
-	private final float zexhibit = 1.25f;
+	private final float znavigation = 1.2f;
+	private final float zexhibit = 1.2f;
 
 	// other parameters
 	private float x = 0;
@@ -126,8 +137,9 @@ public class ARVisionRenderer implements Renderer {
 
 	// objects with textures
 	private int [] textures;
-	private Caption[] caption;
-	private int [] captionTexture = {R.drawable.cory, R.drawable.soda};
+	private BannerNon[] caption;
+	private int [] captionTexture = {R.drawable.text1_non, R.drawable.text2_non, R.drawable.text3_non,
+			R.drawable.text4_non, R.drawable.text5_non};
 	
 	private RawObject[] object;
 	private int [] rawObjTextureMap = {R.drawable.surfobj, R.drawable.tableobj, R.drawable.chairobj};
@@ -135,6 +147,9 @@ public class ARVisionRenderer implements Renderer {
 	// compass object
 	private Square compass;
 	private int compassTexture;
+	
+	private Square navigation;
+	private int navigationTexture;
 	
 	private RawVertexObject vertexObject;
 	private int rawVertexObjFile = R.drawable.trexobj;
@@ -215,6 +230,14 @@ public class ARVisionRenderer implements Renderer {
 		compassModelViewMatrix = new float[16];
 		compassFinalMatrix = new float[16];
 		
+		// separate matrices for compass (compass never moves out of screen)
+		navigationModelMatrix = new float[16];
+		navigationRotationMatrix = new float[16];
+		navigationTranslationMatrix = new float[16];
+		navigationViewMatrix = new float[16];
+		navigationModelViewMatrix = new float[16];
+		navigationFinalMatrix = new float[16];
+		
 		// separate matrices for exhibit (compass never moves out of screen)
 		exhibitModelMatrix = new float[16];
 		exhibitRotationMatrix = new float[16];
@@ -232,10 +255,10 @@ public class ARVisionRenderer implements Renderer {
 	// initialize objects including captions, raw objects and arrows
 	private void initObjects () {
 		// initialize captions
-		caption = new Caption[numCaptions];
+		caption = new BannerNon[numCaptions];
 		int i = 0;
 		for (i = 0; i < numCaptions; i++) {
-			caption[i] = new Caption();
+			caption[i] = new BannerNon();
 		}
 
 		// initialize raw objects
@@ -244,16 +267,19 @@ public class ARVisionRenderer implements Renderer {
 			object[i] = new RawObject(context, rawObjTextureMap[objectTexture[i+numCaptions]]);
 		}
 		
-		vertexObject = new RawVertexObject(context, rawVertexObjFile);
+		//vertexObject = new RawVertexObject(context, rawVertexObjFile);
 		
 		// initialize arrows
 		arrow = new Arrow[numArrows];
 		for (i = 0; i < numArrows; i++) {
-			arrow[i] = new Arrow(1, 2, (float) 0.5, 1, 32);
+			arrow[i] = new Arrow(0.7f, 1.4f, 0.35f, 0.7f, 32);
 		}
 		
 		// initialize compass
 		compass = new Square();
+		
+		// initializing navigation
+		navigation = new Square();
 		
 		// bind textures
 		textures = new int[numTextures];
@@ -285,6 +311,9 @@ public class ARVisionRenderer implements Renderer {
 		// bind compass texture
 		compassTexture = TextureHelper.loadTexture(context, R.drawable.compass);
 		
+		// bind navigation texture
+		navigationTexture = TextureHelper.loadTexture(context, R.drawable.arrow_up);
+		
 		// objects successfully loaded
 		GLStatus = GraphicsStatus.Ready;
 		
@@ -307,14 +336,20 @@ public class ARVisionRenderer implements Renderer {
 		setIdentityM(compassTranslationMatrix, 0);
 		translateM(compassTranslationMatrix, 0, 0f, 0f, -zcompass);
 		
+		setIdentityM(navigationRotationMatrix, 0);
+		setIdentityM(navigationTranslationMatrix, 0);
+		translateM(navigationTranslationMatrix, 0, 0f, 0f, -znavigation);
+		
 		setIdentityM(exhibitRotationMatrix, 0);
 		setIdentityM(exhibitTranslationMatrix, 0);
 		translateM(exhibitTranslationMatrix, 0, 0f, 0f, -zexhibit);
 
 		for (i = 0; i < numTextures; i++) {
 			translateM(translationMatrix[i], 0, objLoc[i][0], objLoc[i][1], objLoc[i][2]);
+			rotateM(rotationMatrix[i], 0, objRot[i][0], 1, 0, 0);
 			rotateM(rotationMatrix[i], 0, objRot[i][1], 0, 1, 0);
-			multiplyMVP(translationMatrix[i], rotationMatrix[i], modelMatrix[i], 
+			rotateM(rotationMatrix[i], 0, objRot[i][2], 0, 0, 1);
+			multiplyMVP(rotationMatrix[i], translationMatrix[i],  modelMatrix[i], 
 					sensorViewMatrix, modelViewMatrix[i],
 					sensorProjectionMatrix, finalMatrix[i]);
 		}
@@ -331,6 +366,10 @@ public class ARVisionRenderer implements Renderer {
 				compassViewMatrix, compassModelViewMatrix,
 				sensorProjectionMatrix, compassFinalMatrix);
 		
+		multiplyMVP(navigationRotationMatrix, navigationTranslationMatrix, navigationModelMatrix,
+				navigationViewMatrix, navigationModelViewMatrix,
+				sensorProjectionMatrix, navigationFinalMatrix);
+		
 		multiplyMVP(exhibitRotationMatrix, exhibitTranslationMatrix, exhibitModelMatrix,
 				exhibitViewMatrix, exhibitModelViewMatrix,
 				sensorProjectionMatrix, exhibitFinalMatrix);
@@ -344,13 +383,7 @@ public class ARVisionRenderer implements Renderer {
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		if (ARVIsionActivity.modeStatus != ARVIsionActivity.modes.modeVisitor.ordinal() 
 				&& ARVIsionActivity.modeStatus != ARVIsionActivity.modes.modeApprentice.ordinal()) {
-			int i = 0;
-			textureProgram.useProgram();
-			for (; i < numCaptions; i++) {
-				textureProgram.setUniforms(finalMatrix[i], textures[i]);
-				caption[i].bindData(textureProgram);
-				caption[i].draw();
-			}
+			int i = numCaptions;
 	
 			objectProgram.useProgram();
 			for (; i < numTextures; i++) {
@@ -366,22 +399,37 @@ public class ARVisionRenderer implements Renderer {
 				arrow[i-numTextures].draw();
 			}
 			
+			i = 0;
+			textureProgram.useProgram();
+			for (; i < numCaptions; i++) {
+				textureProgram.setUniforms(finalMatrix[i], textures[i]);
+				caption[i].bindData(textureProgram);
+				caption[i].draw();
+			}
+			
 			transparentProgram.useProgram();
-			transparentProgram.setUniforms(compassFinalMatrix, compassTexture);
-			compass.bindData(transparentProgram);
-			compass.draw();
+			if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeNavigation.ordinal()) {
+				transparentProgram.setUniforms(navigationFinalMatrix, navigationTexture);
+				navigation.bindData(transparentProgram);
+				navigation.draw();
+			}
+			else {
+				transparentProgram.setUniforms(compassFinalMatrix, compassTexture);
+				compass.bindData(transparentProgram);
+				compass.draw();
+			}
 		}
 		
-		// visitor mode
-		if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeVisitor.ordinal()){
-			if (ARVIsionActivity.prototypeStatus == ARVIsionActivity.prototype.TRex.ordinal() && ARVIsionActivity.flag_prototype == true) {
-				vertexObjectProgram.useProgram();
-				vertexObjectProgram.setUniforms(exhibitFinalMatrix);
-				vertexObject.bindData(vertexObjectProgram);
-				vertexObject.draw();
-			}
-			// TODO implement multiple prototype rendering
-		}
+//		// visitor mode
+//		if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeVisitor.ordinal()){
+//			if (ARVIsionActivity.prototypeStatus == ARVIsionActivity.prototype.TRex.ordinal() && ARVIsionActivity.flag_prototype == true) {
+//				vertexObjectProgram.useProgram();
+//				vertexObjectProgram.setUniforms(exhibitFinalMatrix);
+//				vertexObject.bindData(vertexObjectProgram);
+//				vertexObject.draw();
+//			}
+//			// TODO implement multiple prototype rendering
+//		}
 
 	}
 
@@ -442,7 +490,10 @@ public class ARVisionRenderer implements Renderer {
 				up_portrait[2] = 0;
 			}
 			normalize(up_portrait);
-			setLookAtM(compassViewMatrix, 0, 0f, 0f, 0f, 0f, y, -1f, a
+			setLookAtM(compassViewMatrix, 0, 0f, 0f, 0f, 0f, y+0.1f, -1f, a
+					* up_portrait[0] - b, a * up_portrait[1], a
+					* up_portrait[2]);
+			setLookAtM(navigationViewMatrix, 0, 0f, 0f, 0f, 0f, y+0.3f, -1f, a
 					* up_portrait[0] - b, a * up_portrait[1], a
 					* up_portrait[2]);
 			setLookAtM(exhibitViewMatrix, 0, 0f, 0f, 0f, 0f, 0, -1f, - b, a, 0);
@@ -458,10 +509,20 @@ public class ARVisionRenderer implements Renderer {
 
 		// update compass orientation during sensor update
 		setIdentityM(compassRotationMatrix, 0);
+		rotateM(compassRotationMatrix, 0, 10, 1f, 0f, 0f);
 		rotateM(compassRotationMatrix, 0, mAzimuth, 0f, 1f, 0f);
 		multiplyMVP(compassRotationMatrix, compassTranslationMatrix, compassModelMatrix,
 				compassViewMatrix, compassModelViewMatrix,
 				sensorProjectionMatrix, compassFinalMatrix);
+	
+		// update navigation during sensor update
+		float navRot = computeRotation(dx, dy, dz, objLoc[numCaptions + numRawObjects+ ARVIsionActivity.currentDevice]);
+		setIdentityM(navigationRotationMatrix, 0);
+		rotateM(navigationRotationMatrix, 0, 20, 1f, 0f, 0f);
+		rotateM(navigationRotationMatrix, 0, navRot+ mAzimuth, 0f, 1f, 0f);
+		multiplyMVP(navigationRotationMatrix, navigationTranslationMatrix, navigationModelMatrix,
+				navigationViewMatrix, navigationModelViewMatrix,
+				sensorProjectionMatrix, navigationFinalMatrix);
 		
 		// update exhibit posture during sensor update
 		setIdentityM(exhibitRotationMatrix, 0);
@@ -475,6 +536,13 @@ public class ARVisionRenderer implements Renderer {
 	}
 	
 	// ---------------------- Helper functions -----------------------
+	
+	float computeRotation(double dx, double dy, double dz, float [] dest) {
+		float x = dest[0] - (float) dx;
+		float z = dest[2] - (float) dz;
+		return (float) (Math.atan2(-z, x)/Math.PI*180);
+	}
+	
 	// helper: vector normalization
 	void normalize(float[] a) {
 		double sum = 0;

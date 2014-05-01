@@ -711,7 +711,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         modegroup.add("Calendar");
 
         List<String> devicegroup = new ArrayList<String>();
-        devicegroup.add("3D Scanner");
         devicegroup.add("Afinia H-series");
         devicegroup.add("ProJet 3000");
         devicegroup.add("Product Photo Studio");

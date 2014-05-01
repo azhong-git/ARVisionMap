@@ -139,13 +139,12 @@ public class ObjectBuilder {
 	static GeneratedData createArrow(Cylinder puck, Cone top, int numPoints) {
 		int size = (3*sizeOfCircleInVertices(numPoints) + sizeOfOpenCylinderInVertices(numPoints));
 		ObjectBuilder builder = new ObjectBuilder(size);
+		builder.appendCone(top, numPoints);
+		builder.appendOpenCylinder(puck, numPoints);
 		Circle cylinderBottom = new Circle (puck.center.translateY(-puck.height/2f), puck.radius);
 		builder.appendCircle(cylinderBottom, numPoints);		
 		Circle coneBottom = new Circle (puck.center.translateY(-puck.height/2f), top.radius);
 		builder.appendCircle(coneBottom, numPoints);
-
-		builder.appendCone(top, numPoints);
-		builder.appendOpenCylinder(puck, numPoints);
 		return builder.build();
 	}
 }
