@@ -85,6 +85,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	// sample for visitor mode
 	static public enum prototype {TRex, Prototype1, Prototype2};
 	static public int prototypeStatus;
+	static public boolean flag_prototype;
 	
     // calendar
     boolean available, scheduled, occupied;
@@ -106,6 +107,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	FrameLayout view;
 	// control panel for visitor mode
 	FrameLayout visitorview;
+	FrameLayout visitorsearchingview;
 	// control panel for calendar mode
 	FrameLayout calendarview;
 	// control panel for navigation mode
@@ -119,6 +121,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     // button
     Button next_prototype;
     Button last_prototype;
+    Button show_prototype;
+    Button hide_prototype;
     
     SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
@@ -189,7 +193,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         mLoadingText = (TextView) findViewById(R.id.loading_text);
         
         // get control panel views
+        flag_prototype = false;
         visitorview = (FrameLayout) findViewById(R.id.visitor_control_overlay);
+        visitorsearchingview = (FrameLayout) findViewById(R.id.visitor_searching_overlay);
         calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
         navigationview = (FrameLayout) findViewById(R.id.navigation_control_overlay);
         
@@ -221,6 +227,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	    calendarview.setVisibility(View.INVISIBLE);
 	    navigationview.setVisibility(View.INVISIBLE);
 	    visitorview.setVisibility(View.INVISIBLE);
+	    visitorsearchingview.setVisibility(View.INVISIBLE);
         
         mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
@@ -272,6 +279,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         			calendarview.setVisibility(View.INVISIBLE);
         			navigationview.setVisibility(View.INVISIBLE);
         			visitorview.setVisibility(View.INVISIBLE);
+        			visitorsearchingview.setVisibility(View.INVISIBLE);
+        			flag_prototype = false;
         			mCameraView.setVisibility(View.VISIBLE);
                 }
                 else if (modeStatus == modes.modeVisitor.ordinal()) {
@@ -279,7 +288,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
             		calendarview.setVisibility(View.INVISIBLE);
             		mCameraView.setVisibility(View.VISIBLE); 
             		navigationview.setVisibility(View.INVISIBLE);
-            		visitorview.setVisibility(View.VISIBLE);
+            		visitorview.setVisibility(View.INVISIBLE);
+            		visitorsearchingview.setVisibility(View.VISIBLE);
+        			flag_prototype = false;
                 }                
                 else if (modeStatus == modes.modeApprentice.ordinal()) {
                 	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
@@ -288,6 +299,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
             		calendarview.setVisibility(View.INVISIBLE);
             		mCameraView.setVisibility(View.INVISIBLE); 
             		visitorview.setVisibility(View.INVISIBLE);
+            		visitorsearchingview.setVisibility(View.INVISIBLE);
+        			flag_prototype = false;
             		navigationview.setVisibility(View.INVISIBLE);
                 }
                 else if (modeStatus == modes.modeNavigation.ordinal()) {
@@ -297,6 +310,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
             		navigationview.setVisibility(View.VISIBLE);
             		navigationview.bringToFront();
             		visitorview.setVisibility(View.INVISIBLE);
+            		visitorsearchingview.setVisibility(View.INVISIBLE);
+        			flag_prototype = false;
                 }
                 else if (modeStatus == modes.modeCalendar.ordinal()) {
                 	mViewPager.setVisibility(View.INVISIBLE);
@@ -305,6 +320,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         			mCameraView.setVisibility(View.VISIBLE); 
         			navigationview.setVisibility(View.INVISIBLE);
         			visitorview.setVisibility(View.INVISIBLE);
+        			visitorsearchingview.setVisibility(View.INVISIBLE);
+        			flag_prototype = false;
                 }
                 menuview.collapseGroup(groupPosition);
                 return true;
@@ -728,6 +745,18 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	        	}
         	}
             break;
+        case R.id.showPrototypeButton:
+        	visitorview.setVisibility(View.VISIBLE);
+        	flag_prototype = true;
+        	visitorsearchingview.setVisibility(View.INVISIBLE);
+        	mCameraView.setVisibility(View.INVISIBLE);
+        	break;
+        case R.id.hidePrototypeButton:
+        	visitorsearchingview.setVisibility(View.VISIBLE);
+        	visitorview.setVisibility(View.INVISIBLE);
+        	flag_prototype = false;
+        	mCameraView.setVisibility(View.VISIBLE);
+        	break;
         }
     }
 	
