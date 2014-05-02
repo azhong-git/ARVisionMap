@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
         
+    <item android:id="@+id/action_cb_available"
+          android:title="@string/cb_available"
+          android:checkable="true"
+          android:checked="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_cb_occupied"
+          android:title="@string/cb_occupied"
+          android:checkable="true"
+          android:checked="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_cb_scheduled"
+          android:title="@string/cb_scheduled"
+          android:checkable="true"
+          android:checked="false"
+          android:showAsAction="always" />
+    
     <item android:id="@+id/action_prev"
           android:title="@string/action_prev_prototype"
           android:showAsAction="always" />

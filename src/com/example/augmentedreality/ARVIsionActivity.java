@@ -65,11 +65,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 {   
 	Menu actionBarMenu;
 	
-	Spinner modesSpinner;
     static public enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
 	static public int modeStatus;
     
-	Spinner devicesSpinner;
     static public enum devices {Afinia, ProJet, PhotoStudio, VLSLaserCutter, PowerElectronics}; 
 	static public int currentDevice;
 	
@@ -166,27 +164,25 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	public boolean onCreateOptionsMenu(Menu menu) {
     	actionBarMenu = menu;
 		getMenuInflater().inflate(R.menu.action_menu, menu);
-		 
-		// next_prototype = (MenuItem) menu.findItem(R.id.action_next);
-		// prev_prototype = (MenuItem) menu.findItem(R.id.action_prev);
-		
-		modesSpinner = (Spinner) menu.findItem(R.id.action_modes_spinner).getActionView();
+		 	
+		Spinner modesSpinner = (Spinner) menu.findItem(R.id.action_modes_spinner).getActionView();
 		SpinnerAdapter modesSpinnerAdapter = ArrayAdapter.createFromResource(getActionBar().getThemedContext(),
 				R.array.modes_list, android.R.layout.simple_spinner_dropdown_item);
 		modesSpinner.setAdapter(modesSpinnerAdapter);		
 		modesSpinner.setOnItemSelectedListener(new ModesHandler());
-				
-		devicesSpinner = (Spinner) menu.findItem(R.id.action_devices_spinner).getActionView();
+		
+		Spinner devicesSpinner = (Spinner) menu.findItem(R.id.action_devices_spinner).getActionView();
 		SpinnerAdapter devicesSpinnerAdapter = ArrayAdapter.createFromResource(getActionBar().getThemedContext(),
 				R.array.devices_list, android.R.layout.simple_spinner_dropdown_item);
 		devicesSpinner.setAdapter(devicesSpinnerAdapter);
-		devicesSpinner.setOnItemSelectedListener(new DevicesHandler());	
-		
+		devicesSpinner.setOnItemSelectedListener(new DevicesHandler());	        
+        
 		return true;
 	}
 	  
     @Override
 	public boolean onOptionsItemSelected(MenuItem item) {
+    	boolean isChecked;
 	    switch (item.getItemId()) {
 	        case R.id.action_next:
 	        	if (currentDevice == devices.Afinia.ordinal()) {
@@ -208,6 +204,24 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		        		prototypeStatus--;
 		        	}
 	        	}
+	            break;
+	            
+	        case R.id.action_cb_occupied:
+	        	isChecked = item.isChecked();
+	        	item.setChecked(!isChecked);
+	        	occupied = !isChecked;
+	            break;
+	            
+	        case R.id.action_cb_available:
+	        	isChecked = item.isChecked();
+	        	item.setChecked(!isChecked);
+	        	available = !isChecked;
+	            break;
+	            
+	        case R.id.action_cb_scheduled:
+	        	isChecked = item.isChecked();
+	        	item.setChecked(!isChecked);
+	        	scheduled = !isChecked;
 	            break;
 	    }
 	    return true;	    
@@ -334,6 +348,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     public void onCameraViewStarted(int width, int height) {
         mGray = new Mat();
         mRgba = new Mat();
+        mCameraView.setMinimumWidth(1920);
     }
     
     public void onCameraViewStopped() {
