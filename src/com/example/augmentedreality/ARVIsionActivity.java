@@ -48,9 +48,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -94,17 +91,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	
 	// OpenGL layout
 	FrameLayout view;
-	// control panel for calendar mode
-	FrameLayout calendarview;	
     // Loading text
     TextView mLoadingText;
-    
-    // check boxes
-    CheckBox check_available, check_occupied, check_scheduled;
-    
-    // button
-    MenuItem next_prototype, prev_prototype;
-    
+        
     SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
 	
@@ -210,18 +199,30 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	        	isChecked = item.isChecked();
 	        	item.setChecked(!isChecked);
 	        	occupied = !isChecked;
+	        	if (occupied)
+	        		actionBarMenu.findItem(R.id.action_cb_oc_icon).setIcon(R.drawable.square_green);
+	        	else
+	        		actionBarMenu.findItem(R.id.action_cb_oc_icon).setIcon(R.drawable.square_white);
 	            break;
 	            
 	        case R.id.action_cb_available:
 	        	isChecked = item.isChecked();
 	        	item.setChecked(!isChecked);
 	        	available = !isChecked;
+	        	if (available)
+	        		actionBarMenu.findItem(R.id.action_cb_av_icon).setIcon(R.drawable.square_green);
+	        	else
+	        		actionBarMenu.findItem(R.id.action_cb_av_icon).setIcon(R.drawable.square_white);
 	            break;
 	            
 	        case R.id.action_cb_scheduled:
 	        	isChecked = item.isChecked();
 	        	item.setChecked(!isChecked);
 	        	scheduled = !isChecked;
+	        	if (scheduled)
+	        		actionBarMenu.findItem(R.id.action_cb_sc_icon).setIcon(R.drawable.square_green);
+	        	else
+	        		actionBarMenu.findItem(R.id.action_cb_sc_icon).setIcon(R.drawable.square_white);
 	            break;
 	    }
 	    return true;	    
@@ -242,7 +243,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         
         // get control panel views
         flag_prototype = false;
-        calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
         
         modeStatus = modes.modeWorld.ordinal();
 		currentDevice = devices.Afinia.ordinal();
@@ -250,56 +250,14 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         // initiate prototype status;
         prototypeStatus = prototype.TRex.ordinal();
         
-        check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
-        check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
-        check_available = (CheckBox) findViewById(R.id.checkbox_available);
         available = false;
 	    scheduled = false;
 	    occupied = false;
-	    calendarview.setVisibility(View.INVISIBLE);
         
         mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setVisibility(View.INVISIBLE);
         
-        // set check function
-        check_available.setOnCheckedChangeListener(new OnCheckedChangeListener () {
-			@Override
-			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-				if (arg1) {
-					available = true;
-				}
-				else {
-					available = false;
-				}
-			}
-		});
-        
-        check_occupied.setOnCheckedChangeListener(new OnCheckedChangeListener () {
-			@Override
-			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-				if (arg1) {
-					occupied = true;
-				}
-				else {
-					occupied = false;
-				}
-			}
-		});
-        
-        check_scheduled.setOnCheckedChangeListener(new OnCheckedChangeListener () {
-			@Override
-			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-				if (arg1) {
-					scheduled = true;
-				}
-				else {
-					scheduled = false;
-				}				
-			}
-		});
-        
-        ////////
         initCamera();
 
         // Initiate the Sensor Manager and register this as Listener for the required sensor types:
@@ -562,8 +520,12 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
             }
             else if (modeStatus == modes.modeCalendar.ordinal()) {
     			mCameraView.setVisibility(View.VISIBLE); 
-    			calendarview.setVisibility(View.VISIBLE);
-    			calendarview.bringToFront();
+    			actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_available).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_oc_icon).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_occupied).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_sc_icon).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_scheduled).setVisible(true);
             }
 		}
 
@@ -576,11 +538,16 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	
 	public void setViewsInvisible() {
 		mViewPager.setVisibility(View.INVISIBLE);
-		calendarview.setVisibility(View.INVISIBLE);
 		mCameraView.setVisibility(View.INVISIBLE);
 		actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(false);
 		actionBarMenu.findItem(R.id.action_next).setVisible(false);
 		actionBarMenu.findItem(R.id.action_prev).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_available).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_oc_icon).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_occupied).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_sc_icon).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_scheduled).setVisible(false);
 	}
 	
 	private class DevicesHandler implements AdapterView.OnItemSelectedListener{

@@ -5,56 +5,26 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <FrameLayout 
+    <FrameLayout
+        android:id="@+id/camera_preview"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
-	    <FrameLayout
-	        android:id="@+id/camera_preview"
-	        android:layout_width="fill_parent"
-	        android:layout_height="fill_parent" >
-	    </FrameLayout>
-	    
-	    <TextView
-	        android:id="@+id/loading_text"
-	        android:layout_height="wrap_content"
-	        android:layout_width="wrap_content"
-	        android:text="@string/loading_string"
-	        android:textColor="#ffffff"
-	        android:layout_gravity="center"
-	        android:textSize="60sp"> 
-	    </TextView>
-	    
-	    <android.support.v4.view.ViewPager 
-		    android:id="@+id/pager"
-		    android:layout_width="fill_parent"
-		    android:layout_height="fill_parent"
-	    	tools:context="com.example.augmentedreality.ARVIsionActivity" />
+        android:layout_height="fill_parent" >
     </FrameLayout>
-
-	<FrameLayout
-	    android:id="@+id/calendar_control_overlay"
+    
+    <TextView
+        android:id="@+id/loading_text"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="@string/loading_string"
+        android:textColor="#ffffff"
+        android:layout_centerInParent="true"
+        android:textSize="60sp"> 
+    </TextView>
+    
+    <android.support.v4.view.ViewPager 
+	    android:id="@+id/pager"
 	    android:layout_width="fill_parent"
-	    android:layout_height="fill_parent">	    
-	    
-		<CheckBox
-		    android:id="@+id/checkbox_scheduled"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:text="@string/cb_scheduled"
-		    android:layout_gravity="bottom|left" />
-		<CheckBox
-		    android:id="@+id/checkbox_occupied"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:text="@string/cb_occupied"		    
-		    android:layout_gravity="bottom|left"
-		    android:layout_marginBottom="40dp" />
-		<CheckBox
-		    android:id="@+id/checkbox_available"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:text="@string/cb_available"
-		    android:layout_gravity="bottom|left"
-		    android:layout_marginBottom="80dp" />
-    </FrameLayout>	
+	    android:layout_height="fill_parent"
+    	tools:context="com.example.augmentedreality.ARVIsionActivity" />
+
 </RelativeLayout>
