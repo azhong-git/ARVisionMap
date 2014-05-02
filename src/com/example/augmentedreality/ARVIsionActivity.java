@@ -4,9 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -43,20 +40,21 @@ import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.widget.Button;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.ExpandableListView;
-import android.widget.ExpandableListView.OnChildClickListener;
-import android.widget.ExpandableListView.OnGroupExpandListener;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -64,21 +62,14 @@ import com.example.openglbasics.R;
 
 public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, 
 GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
-{
+{   
+	Menu actionBarMenu;
 	
-	// expandable list view for menu	
-	ExpandableListAdapter listAdapter;
-	ExpandableListView menuview;
-    List<String> listDataHeader;
-    HashMap<String, List<String>> listDataChild;
+	Spinner modesSpinner;
     static public enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
 	static public int modeStatus;
     
-	// expandable list view for navigation mode
-	ExpandableListAdapter deviceListAdapter;
-	ExpandableListView deviceview;
-    List<String> deviceDataHeader;
-    HashMap<String, List<String>> deviceDataChild;
+	Spinner devicesSpinner;
     static public enum devices {Afinia, ProJet, PhotoStudio, VLSLaserCutter, PowerElectronics}; 
 	static public int currentDevice;
 	
@@ -101,17 +92,12 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	private int mCameraIndex = 0;
 	
 	// OpenCV objection detection	
-	private Mat mRgba, mGray, mHSV, mThresh;
+	private Mat mRgba, mGray;
 	
 	// OpenGL layout
 	FrameLayout view;
-	// control panel for visitor mode
-	FrameLayout visitorview;
-	FrameLayout visitorsearchingview;
 	// control panel for calendar mode
-	FrameLayout calendarview;
-	// control panel for navigation mode
-	FrameLayout navigationview;		
+	FrameLayout calendarview;	
     // Loading text
     TextView mLoadingText;
     
@@ -119,10 +105,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     CheckBox check_available, check_occupied, check_scheduled;
     
     // button
-    Button next_prototype;
-    Button last_prototype;
-    Button show_prototype;
-    Button hide_prototype;
+    MenuItem next_prototype, prev_prototype;
     
     SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
 	ViewPager mViewPager;
@@ -178,12 +161,63 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
             }
         }
     };	
+    
+    @Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+    	actionBarMenu = menu;
+		getMenuInflater().inflate(R.menu.action_menu, menu);
+		 
+		// next_prototype = (MenuItem) menu.findItem(R.id.action_next);
+		// prev_prototype = (MenuItem) menu.findItem(R.id.action_prev);
+		
+		modesSpinner = (Spinner) menu.findItem(R.id.action_modes_spinner).getActionView();
+		SpinnerAdapter modesSpinnerAdapter = ArrayAdapter.createFromResource(getActionBar().getThemedContext(),
+				R.array.modes_list, android.R.layout.simple_spinner_dropdown_item);
+		modesSpinner.setAdapter(modesSpinnerAdapter);		
+		modesSpinner.setOnItemSelectedListener(new ModesHandler());
+				
+		devicesSpinner = (Spinner) menu.findItem(R.id.action_devices_spinner).getActionView();
+		SpinnerAdapter devicesSpinnerAdapter = ArrayAdapter.createFromResource(getActionBar().getThemedContext(),
+				R.array.devices_list, android.R.layout.simple_spinner_dropdown_item);
+		devicesSpinner.setAdapter(devicesSpinnerAdapter);
+		devicesSpinner.setOnItemSelectedListener(new DevicesHandler());	
+		
+		return true;
+	}
 	  
+    @Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    switch (item.getItemId()) {
+	        case R.id.action_next:
+	        	if (currentDevice == devices.Afinia.ordinal()) {
+		        	if (prototypeStatus == prototype.Prototype2.ordinal()) {
+		        		prototypeStatus = prototype.TRex.ordinal();
+		        	}
+		        	else {
+		        		prototypeStatus++;
+		        	}
+	        	}
+	            break;
+	            
+	        case R.id.action_prev:
+	        	if (currentDevice == devices.Afinia.ordinal()) {
+		        	if (prototypeStatus == prototype.TRex.ordinal()) {
+		        		prototypeStatus = prototype.Prototype2.ordinal();
+		        	}
+		        	else {
+		        		prototypeStatus--;
+		        	}
+	        	}
+	            break;
+	    }
+	    return true;	    
+	}
+    
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
         
         mDetector = new GestureDetectorCompat(this,this);
@@ -194,30 +228,14 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         
         // get control panel views
         flag_prototype = false;
-        visitorview = (FrameLayout) findViewById(R.id.visitor_control_overlay);
-        visitorsearchingview = (FrameLayout) findViewById(R.id.visitor_searching_overlay);
         calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
-        navigationview = (FrameLayout) findViewById(R.id.navigation_control_overlay);
         
-        // get the listview
-        menuview = (ExpandableListView) findViewById(R.id.expandableListView);
-        deviceview = (ExpandableListView) findViewById(R.id.deviceExpandableListView);
-        // preparing list data
-        prepareListData();
-        listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild); 
-        deviceListAdapter = new ExpandableListAdapter(this, deviceDataHeader, deviceDataChild);
-        // setting list adapter
-        menuview.setAdapter(listAdapter);        
         modeStatus = modes.modeWorld.ordinal();
-
-        deviceview.setAdapter(deviceListAdapter);
 		currentDevice = devices.Afinia.ordinal();
         
         // initiate prototype status;
         prototypeStatus = prototype.TRex.ordinal();
-        next_prototype = (Button) findViewById(R.id.nextPrototypeButton);
-        last_prototype = (Button) findViewById(R.id.lastPrototypeButton);
-                
+        
         check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
         check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
         check_available = (CheckBox) findViewById(R.id.checkbox_available);
@@ -225,114 +243,10 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	    scheduled = false;
 	    occupied = false;
 	    calendarview.setVisibility(View.INVISIBLE);
-	    navigationview.setVisibility(View.INVISIBLE);
-	    visitorview.setVisibility(View.INVISIBLE);
-	    visitorsearchingview.setVisibility(View.INVISIBLE);
         
         mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setVisibility(View.INVISIBLE);
-		
-		deviceview.setOnChildClickListener(new OnChildClickListener() {
-
-			@Override
-			public boolean onChildClick(ExpandableListView parent, View v,
-					int groupPosition, int childPosition, long id) {
-				// TODO Auto-generated method stub
-				currentDevice = childPosition;
-				Toast.makeText(getApplicationContext(), deviceDataHeader.get(groupPosition)+" : "+deviceDataChild.get(deviceDataHeader.get(groupPosition)).get(childPosition), 
-                		Toast.LENGTH_SHORT).show();
-				
-				if (currentDevice == devices.Afinia.ordinal()) {
-					// render direction arrows or signs to Afinia H-series (the small 3D printer)
-				}
-				else if (currentDevice == devices.ProJet.ordinal()) {
-					// render direction arrows or signs to ProJet 3000 (the large 3D printer)
-				}
-				else if (currentDevice == devices.PhotoStudio.ordinal()) {
-					// render direction arrows or signs to Product Photo Studio
-				}
-				else if (currentDevice == devices.VLSLaserCutter.ordinal()) {
-					// render direction arrows or signs to 3D scanner
-				}
-				else if (currentDevice == devices.PowerElectronics.ordinal()) {
-					// render direction arrows or signs to Product Photo Studio
-				}
-				// directions for other devices can be added
-				deviceview.collapseGroup(groupPosition);
-				return false;
-			}
-			
-		});
-		
-        menuview.setOnChildClickListener(new OnChildClickListener() {
-        	@Override
-            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-        		
-        		modeStatus = childPosition;
-                Toast.makeText(getApplicationContext(), listDataHeader.get(groupPosition)+" : "+listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition), 
-                		Toast.LENGTH_SHORT).show();
-                
-                if (modeStatus == modes.modeWorld.ordinal()) {
-                	mViewPager.setVisibility(View.INVISIBLE);
-        			calendarview.setVisibility(View.INVISIBLE);
-        			navigationview.setVisibility(View.INVISIBLE);
-        			visitorview.setVisibility(View.INVISIBLE);
-        			visitorsearchingview.setVisibility(View.INVISIBLE);
-        			flag_prototype = false;
-        			mCameraView.setVisibility(View.VISIBLE);
-                }
-                else if (modeStatus == modes.modeVisitor.ordinal()) {
-                	mViewPager.setVisibility(View.INVISIBLE);
-            		calendarview.setVisibility(View.INVISIBLE);
-            		mCameraView.setVisibility(View.VISIBLE); 
-            		navigationview.setVisibility(View.INVISIBLE);
-            		visitorview.setVisibility(View.INVISIBLE);
-            		visitorsearchingview.setVisibility(View.VISIBLE);
-        			flag_prototype = false;
-                }                
-                else if (modeStatus == modes.modeApprentice.ordinal()) {
-                	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
-                	mViewPager.setVisibility(View.VISIBLE);
-        			mViewPager.setCurrentItem(0);
-            		calendarview.setVisibility(View.INVISIBLE);
-            		mCameraView.setVisibility(View.INVISIBLE); 
-            		visitorview.setVisibility(View.INVISIBLE);
-            		visitorsearchingview.setVisibility(View.INVISIBLE);
-        			flag_prototype = false;
-            		navigationview.setVisibility(View.INVISIBLE);
-                }
-                else if (modeStatus == modes.modeNavigation.ordinal()) {
-                	mViewPager.setVisibility(View.INVISIBLE);
-        			calendarview.setVisibility(View.INVISIBLE);
-        			mCameraView.setVisibility(View.VISIBLE); 
-            		navigationview.setVisibility(View.VISIBLE);
-            		navigationview.bringToFront();
-            		visitorview.setVisibility(View.INVISIBLE);
-            		visitorsearchingview.setVisibility(View.INVISIBLE);
-        			flag_prototype = false;
-                }
-                else if (modeStatus == modes.modeCalendar.ordinal()) {
-                	mViewPager.setVisibility(View.INVISIBLE);
-        			calendarview.setVisibility(View.VISIBLE);
-        			calendarview.bringToFront();
-        			mCameraView.setVisibility(View.VISIBLE); 
-        			navigationview.setVisibility(View.INVISIBLE);
-        			visitorview.setVisibility(View.INVISIBLE);
-        			visitorsearchingview.setVisibility(View.INVISIBLE);
-        			flag_prototype = false;
-                }
-                menuview.collapseGroup(groupPosition);
-                return true;
-            }
-        });
-        
-        menuview.setOnGroupExpandListener(new OnGroupExpandListener() {
-        	@Override
-        	public void onGroupExpand (int groupPosition) {
-        		//listDataHeader.set(groupPosition, "Mode Selection");
-        	}
-        });
         
         // set check function
         check_available.setOnCheckedChangeListener(new OnCheckedChangeListener () {
@@ -420,15 +334,11 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     public void onCameraViewStarted(int width, int height) {
         mGray = new Mat();
         mRgba = new Mat();
-        mHSV = new Mat();
-        mThresh = new Mat();
     }
     
     public void onCameraViewStopped() {
         mGray.release();
         mRgba.release();
-        mHSV.release();
-        mThresh.release();
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
@@ -440,7 +350,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				@Override
 				public void run() {						
 					mLoadingText.setVisibility(View.VISIBLE);
-					menuview.setVisibility(View.INVISIBLE);
 				}
 			});
         }
@@ -449,7 +358,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				@Override
 				public void run() {						
 					mLoadingText.setVisibility(View.INVISIBLE);	
-					menuview.setVisibility(View.VISIBLE);
 				}
 			});
         }
@@ -537,7 +445,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     }
     
     public void updateLocationResults(String locationString) {
-    	// Toast.makeText(this, "Location Fetched: " + locationString, Toast.LENGTH_SHORT).show();
     	int delim = locationString.indexOf(',');
     	if (delim == -1)
     		return;
@@ -614,6 +521,66 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		}	
 	};
 	
+	private class ModesHandler implements AdapterView.OnItemSelectedListener{
+
+		@Override
+		public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+			modeStatus = position;
+			flag_prototype = false;
+			setViewsInvisible();
+			
+            if (modeStatus == modes.modeWorld.ordinal()) {
+    			mCameraView.setVisibility(View.VISIBLE);
+            }
+            else if (modeStatus == modes.modeVisitor.ordinal()) {
+            	actionBarMenu.findItem(R.id.action_next).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_prev).setVisible(true);
+            }                
+            else if (modeStatus == modes.modeApprentice.ordinal()) {
+        		mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
+            	mViewPager.setVisibility(View.VISIBLE);
+    			mViewPager.setCurrentItem(0);
+            }
+            else if (modeStatus == modes.modeNavigation.ordinal()) {
+            	actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(true);
+        		mCameraView.setVisibility(View.VISIBLE); 
+            }
+            else if (modeStatus == modes.modeCalendar.ordinal()) {
+    			mCameraView.setVisibility(View.VISIBLE); 
+    			calendarview.setVisibility(View.VISIBLE);
+    			calendarview.bringToFront();
+            }
+		}
+
+		@Override
+		public void onNothingSelected(AdapterView<?> parent) {
+			// TODO Auto-generated method stub
+			
+		}				
+	}
+	
+	public void setViewsInvisible() {
+		mViewPager.setVisibility(View.INVISIBLE);
+		calendarview.setVisibility(View.INVISIBLE);
+		mCameraView.setVisibility(View.INVISIBLE);
+		actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(false);
+		actionBarMenu.findItem(R.id.action_next).setVisible(false);
+		actionBarMenu.findItem(R.id.action_prev).setVisible(false);
+	}
+	
+	private class DevicesHandler implements AdapterView.OnItemSelectedListener{
+
+		@Override
+		public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+			currentDevice = position;
+		}
+
+		@Override
+		public void onNothingSelected(AdapterView<?> parent) {
+			// TODO Auto-generated method stub
+			
+		}				
+	}
 	
 	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
 		
@@ -711,74 +678,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			}
 			return rootView;
 		}
-	}	
-	
-	private void prepareListData() {
-        listDataHeader = new ArrayList<String>();
-        listDataChild = new HashMap<String, List<String>>();
-        deviceDataHeader = new ArrayList<String>();
-        deviceDataChild = new HashMap<String, List<String>>();
-        
-        // Adding child data
-        listDataHeader.add("Modes");
-        deviceDataHeader.add("Devices");
- 
-        // Adding child data
-        List<String> modegroup = new ArrayList<String>();
-        modegroup.add("World");
-        modegroup.add("Visitor");
-        modegroup.add("Apprentice");
-        modegroup.add("Navigation");
-        modegroup.add("Calendar");
-
-        List<String> devicegroup = new ArrayList<String>();
-        devicegroup.add("Afinia H-series");
-        devicegroup.add("ProJet 3000");
-        devicegroup.add("Product Photo Studio");
-        devicegroup.add("VLS Laser Cutter");
-        devicegroup.add("Power Electronics");
- 
-        listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
-        deviceDataChild.put(deviceDataHeader.get(0), devicegroup);
-    }
-
-	// button click event
-	public void myButtonClickHandler(View view) {
-        switch (view.getId()) {
-        case R.id.nextPrototypeButton:
-        	if (currentDevice == devices.Afinia.ordinal()) {
-	        	if (prototypeStatus == prototype.Prototype2.ordinal()) {
-	        		prototypeStatus = prototype.TRex.ordinal();
-	        	}
-	        	else {
-	        		prototypeStatus++;
-	        	}
-        	}
-            break;
-        case R.id.lastPrototypeButton:
-        	if (currentDevice == devices.Afinia.ordinal()) {
-	        	if (prototypeStatus == prototype.TRex.ordinal()) {
-	        		prototypeStatus = prototype.Prototype2.ordinal();
-	        	}
-	        	else {
-	        		prototypeStatus--;
-	        	}
-        	}
-            break;
-        case R.id.showPrototypeButton:
-        	visitorview.setVisibility(View.VISIBLE);
-        	flag_prototype = true;
-        	visitorsearchingview.setVisibility(View.INVISIBLE);
-        	mCameraView.setVisibility(View.INVISIBLE);
-        	break;
-        case R.id.hidePrototypeButton:
-        	visitorsearchingview.setVisibility(View.VISIBLE);
-        	visitorview.setVisibility(View.INVISIBLE);
-        	flag_prototype = false;
-        	mCameraView.setVisibility(View.VISIBLE);
-        	break;
-        }
-    }
+	}
 	
 	@Override 
     public boolean onTouchEvent(MotionEvent event){ 

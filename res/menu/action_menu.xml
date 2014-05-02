@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+        
+    <item android:id="@+id/action_prev"
+          android:title="@string/action_prev_prototype"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_next"
+          android:title="@string/action_next_prototype"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_devices_spinner"
+          android:title="@string/devices_list_title"
+          android:showAsAction="always" 
+          android:actionViewClass="android.widget.Spinner" />
+    
+    <item android:id="@+id/action_modes_spinner"
+          android:title="@string/modes_list_title"
+          android:showAsAction="always" 
+          android:actionViewClass="android.widget.Spinner" />
+</menu>

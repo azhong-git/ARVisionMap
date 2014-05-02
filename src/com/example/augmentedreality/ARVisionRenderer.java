@@ -437,7 +437,8 @@ public class ARVisionRenderer implements Renderer {
 		
 		// visitor mode
 		if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeVisitor.ordinal()){
-			if (ARVIsionActivity.prototypeStatus == ARVIsionActivity.prototype.TRex.ordinal() && ARVIsionActivity.flag_prototype == true) {
+			if (ARVIsionActivity.prototypeStatus == ARVIsionActivity.prototype.TRex.ordinal())// && ARVIsionActivity.flag_prototype == true) 
+			{
 				vertexObjectProgram.useProgram();
 				vertexObjectProgram.setUniforms(exhibitFinalMatrix);
 				vertexObject.bindData(vertexObjectProgram);
