@@ -87,15 +87,15 @@ public class ARVisionRenderer implements Renderer {
 	//---------------------------------------------------------------------------------
 	// ---------------------------- Location parameters -------------------------------
 	// projection matrix parameters
-	private final float far = 20f;
-	private final float near = 0.2f;
+	final static float far = 20f;
+	final static float near = 0.2f;
 
 	// distance on the z axis
 	//private final float[] zdis = new float[MAXNUM_TEXTURES];
 	
 	private int [] objectType;
 	private int [] objectTexture;
-	private float [][] objLoc;
+	static float [][] objLoc;
 	private float [][] objRot;
 
 	private final float zcompass = 1f;
@@ -122,11 +122,11 @@ public class ARVisionRenderer implements Renderer {
 	//---------------------------------------------------------------------------------	
 	//------------------------------- Objects and textures ----------------------------
 	// number of captions (w/ texture)
-	private int numCaptions;
+	private static int numCaptions;
 	// number of raw objects (w/ texture)
-	private int numRawObjects;
+	private static int numRawObjects;
 	// number of arrows (w/o texture)
-	private int numArrows;
+	private static int numArrows;
 	
 	// number of objects (numCaptions + numRawObjects + numArrows)
 	private int numObjects;
@@ -515,6 +515,18 @@ public class ARVisionRenderer implements Renderer {
 		}
 		
 		int i = 0;
+		for (; i < numCaptions; i++) {
+			setIdentityM(rotationMatrix[i], 0);
+			float navRot = computeRotation(dx, dy, dz, objLoc[i]);
+			rotateM(rotationMatrix[i], 0, objRot[i][0], 1, 0, 0);
+			rotateM(rotationMatrix[i], 0, objRot[i][1], 0, 1, 0);
+			rotateM(rotationMatrix[i], 0, objRot[i][2]-navRot, 0, 0, 1);
+			multiplyMVP(rotationMatrix[i], translationMatrix[i],  modelMatrix[i], 
+					sensorViewMatrix, modelViewMatrix[i],
+					sensorProjectionMatrix, finalMatrix[i]);
+		}
+		
+		
 		// update all map objects
 		for (; i < numObjects; i++) {
 			multiplyVP(modelMatrix[i], sensorViewMatrix, modelViewMatrix[i],
@@ -551,11 +563,31 @@ public class ARVisionRenderer implements Renderer {
 	
 	// ---------------------- Helper functions -----------------------
 	
-	float computeRotation(double dx, double dy, double dz, float [] dest) {
+	static float computeRotation(double dx, double dy, double dz, float [] dest) {
 		float x = dest[0] - (float) dx;
 		float z = dest[2] - (float) dz;
 		return (float) (Math.atan2(-z, x)/Math.PI*180);
 	}
+	
+	static int getNearestDevice(float dx, float dy, float dz, float mAzimuth) {
+		float minDiff = 5;
+		
+		for (int i = 0; i < numArrows; i++) {
+			if (Math.abs((-computeRotation(dx, dy, dz, objLoc[numCaptions + numRawObjects + i]) - mAzimuth)) % 360
+					< minDiff 
+					|| 
+					360 - Math.abs((-computeRotation(dx, dy, dz, objLoc[numCaptions + numRawObjects + i]) - mAzimuth)) % 360
+					< minDiff
+					) 
+				return i;
+		}
+		return -1;
+	}
+	
+	static float calNearestDevice(float dx, float dy, float dz, float mAzimuth, int p) {
+		return computeRotation(dx, dy, dz, objLoc[numCaptions + numRawObjects + p]);
+	}
+	
 	
 	// helper: vector normalization
 	void normalize(float[] a) {

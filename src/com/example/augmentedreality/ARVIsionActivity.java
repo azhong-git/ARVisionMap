@@ -27,6 +27,7 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -80,6 +81,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     List<String> deviceDataHeader;
     HashMap<String, List<String>> deviceDataChild;
     static public enum devices {Afinia, ProJet, PhotoStudio, VLSLaserCutter, PowerElectronics}; 
+    static final String [] listOfDevices = {"Afinia H-series", "ProJet 3000", "Photo Studio", "VLS Laser Cutter", "Power Electronics"}; 
 	static public int currentDevice;
 	
 	// sample for visitor mode
@@ -805,7 +807,17 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	@Override
 	public void onLongPress(MotionEvent arg0) {
 		// TODO Auto-generated method stub
+		Log.d("DEBUG", "onLongPress: " + arg0.toString());
+		float x = arg0.getX();
+		float half = (x-600)/600*(float)(Math.tan(Math.toRadians(35)) * ARVisionRenderer.near);
 		
+		float angle = (float) (mAzimuth + Math.toDegrees(Math.atan(half/ARVisionRenderer.near)));
+		int deviceNo = ARVisionRenderer.getNearestDevice((float)dx, (float)dy, (float)dz, angle);
+
+		Log.d("DEBUG", "onLongPress: Angle: " + angle);
+		Log.d("DEBUG", "onLongPress: Device: " + deviceNo);
+		Toast.makeText(getApplicationContext(), listOfDevices[deviceNo], 
+        		Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
