@@ -759,8 +759,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 
 		Log.d("DEBUG", "onLongPress: Angle: " + angle);
 		Log.d("DEBUG", "onLongPress: Device: " + deviceNo);
-		Toast.makeText(getApplicationContext(), listOfDevices[deviceNo], 
-        		Toast.LENGTH_SHORT).show();
+		if (deviceNo >= 0)
+			Toast.makeText(getApplicationContext(), listOfDevices[deviceNo], Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
