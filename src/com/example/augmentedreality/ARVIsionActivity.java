@@ -4,9 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -44,20 +41,19 @@ import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.ExpandableListView;
-import android.widget.ExpandableListView.OnChildClickListener;
-import android.widget.ExpandableListView.OnGroupExpandListener;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -65,31 +61,22 @@ import com.example.openglbasics.R;
 
 public class ARVIsionActivity extends Activity implements CvCameraViewListener2, SensorEventListener, 
 GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
-{
+{   
+	Menu actionBarMenu;
 	
-	// expandable list view for menu	
-	ExpandableListAdapter listAdapter;
-	ExpandableListView menuview;
-    List<String> listDataHeader;
-    HashMap<String, List<String>> listDataChild;
     static public enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
 	static public int modeStatus;
     
-	// expandable list view for navigation mode
-	ExpandableListAdapter deviceListAdapter;
-	ExpandableListView deviceview;
-    List<String> deviceDataHeader;
-    HashMap<String, List<String>> deviceDataChild;
     static public enum devices {Afinia, ProJet, PhotoStudio, VLSLaserCutter, PowerElectronics}; 
     static final String [] listOfDevices = {"Afinia H-series", "ProJet 3000", "Photo Studio", "VLS Laser Cutter", "Power Electronics"}; 
 	static public int currentDevice;
 	
 	// sample for visitor mode
-	static public enum prototype {TRex, Prototype1, Prototype2};
-	static public int prototypeStatus;
-	static public boolean flag_prototype;
+	static public enum prototypes {TRex, Prototype1, Prototype2};
+	static public int currentPrototypeAfinia, currentPrototypePJ,
+			currentPrototypePE, currentPrototypePS, currentPrototypeLC;
 	
-    // calendar
+    // calendar state variables
     static public boolean available, scheduled, occupied;
 	    
 	// OpenGL content view
@@ -103,30 +90,14 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	private int mCameraIndex = 0;
 	
 	// OpenCV objection detection	
-	private Mat mRgba, mGray, mHSV, mThresh;
+	private Mat mRgba, mGray;
 	
 	// OpenGL layout
 	FrameLayout view;
-	// control panel for visitor mode
-	FrameLayout visitorview;
-	FrameLayout visitorsearchingview;
-	// control panel for calendar mode
-	FrameLayout calendarview;
-	// control panel for navigation mode
-	FrameLayout navigationview;		
     // Loading text
     TextView mLoadingText;
     
-    // check boxes
-    CheckBox check_available, check_occupied, check_scheduled;
-    
-    // button
-    Button next_prototype;
-    Button last_prototype;
-    Button show_prototype;
-    Button hide_prototype;
-    
-    SectionsPagerAdapterApprentice mSectionsPagerAdapterApprentice;
+    ApprenticeModeGalleryAdapter mApprenticeModeGalleryAdapter;
 	ViewPager mViewPager;
 	
 	private GestureDetectorCompat mDetector; 
@@ -180,12 +151,83 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
             }
         }
     };	
+    
+    @Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+    	actionBarMenu = menu;
+		getMenuInflater().inflate(R.menu.action_menu, menu);
+		 	
+		Spinner modesSpinner = (Spinner) menu.findItem(R.id.action_modes_spinner).getActionView();
+		SpinnerAdapter modesSpinnerAdapter = ArrayAdapter.createFromResource(getActionBar().getThemedContext(),
+				R.array.modes_list, android.R.layout.simple_spinner_dropdown_item);
+		modesSpinner.setAdapter(modesSpinnerAdapter);		
+		modesSpinner.setOnItemSelectedListener(new ModesHandler());
+		
+		Spinner devicesSpinner = (Spinner) menu.findItem(R.id.action_devices_spinner).getActionView();
+		SpinnerAdapter devicesSpinnerAdapter = ArrayAdapter.createFromResource(getActionBar().getThemedContext(),
+				R.array.devices_list, android.R.layout.simple_spinner_dropdown_item);
+		devicesSpinner.setAdapter(devicesSpinnerAdapter);
+		devicesSpinner.setOnItemSelectedListener(new DevicesHandler());	        
+        
+		return true;
+	}
 	  
+    @Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+    	boolean isChecked;
+	    switch (item.getItemId()) {
+	        case R.id.action_next:
+	        	currentPrototypeAfinia++;
+	        	if (currentPrototypeAfinia == prototypes.values().length)
+	        		currentPrototypeAfinia = 0;
+	            break;
+	            
+	        case R.id.action_prev:
+	        	currentPrototypeAfinia--;
+	        	if (currentPrototypeAfinia == -1)
+	        		currentPrototypeAfinia = prototypes.values().length - 1;
+	            break;
+	            
+	        case R.id.action_cb_occupied:
+	        	isChecked = item.isChecked();
+	        	item.setChecked(!isChecked);
+	        	occupied = !isChecked;
+	        	if (occupied)
+	        		actionBarMenu.findItem(R.id.action_cb_oc_icon).setIcon(R.drawable.square_green);
+	        	else
+	        		actionBarMenu.findItem(R.id.action_cb_oc_icon).setIcon(R.drawable.square_white);
+	            break;
+	            
+	        case R.id.action_cb_available:
+	        	isChecked = item.isChecked();
+	        	item.setChecked(!isChecked);
+	        	available = !isChecked;
+	        	if (available)
+	        		actionBarMenu.findItem(R.id.action_cb_av_icon).setIcon(R.drawable.square_green);
+	        	else
+	        		actionBarMenu.findItem(R.id.action_cb_av_icon).setIcon(R.drawable.square_white);
+	            break;
+	            
+	        case R.id.action_cb_scheduled:
+	        	isChecked = item.isChecked();
+	        	item.setChecked(!isChecked);
+	        	scheduled = !isChecked;
+	        	if (scheduled)
+	        		actionBarMenu.findItem(R.id.action_cb_sc_icon).setIcon(R.drawable.square_green);
+	        	else
+	        		actionBarMenu.findItem(R.id.action_cb_sc_icon).setIcon(R.drawable.square_white);
+	            break;
+	    }
+	    return true;	    
+	}
+    
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().addFlags(
+        		WindowManager.LayoutParams.FLAG_FULLSCREEN |
+        		WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
         
         mDetector = new GestureDetectorCompat(this,this);
@@ -194,186 +236,18 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         mLoadingText = (TextView) findViewById(R.id.loading_text);
         
-        // get control panel views
-        flag_prototype = false;
-        visitorview = (FrameLayout) findViewById(R.id.visitor_control_overlay);
-        visitorsearchingview = (FrameLayout) findViewById(R.id.visitor_searching_overlay);
-        calendarview = (FrameLayout) findViewById(R.id.calendar_control_overlay);
-        navigationview = (FrameLayout) findViewById(R.id.navigation_control_overlay);
-        
-        // get the listview
-        menuview = (ExpandableListView) findViewById(R.id.expandableListView);
-        deviceview = (ExpandableListView) findViewById(R.id.deviceExpandableListView);
-        // preparing list data
-        prepareListData();
-        listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild); 
-        deviceListAdapter = new ExpandableListAdapter(this, deviceDataHeader, deviceDataChild);
-        // setting list adapter
-        menuview.setAdapter(listAdapter);        
         modeStatus = modes.modeWorld.ordinal();
-
-        deviceview.setAdapter(deviceListAdapter);
 		currentDevice = devices.Afinia.ordinal();
+        currentPrototypeAfinia = prototypes.TRex.ordinal();
         
-        // initiate prototype status;
-        prototypeStatus = prototype.TRex.ordinal();
-        next_prototype = (Button) findViewById(R.id.nextPrototypeButton);
-        last_prototype = (Button) findViewById(R.id.lastPrototypeButton);
-                
-        check_scheduled = (CheckBox) findViewById(R.id.checkbox_scheduled);
-        check_occupied = (CheckBox) findViewById(R.id.checkbox_occupied);
-        check_available = (CheckBox) findViewById(R.id.checkbox_available);
         available = false;
 	    scheduled = false;
 	    occupied = false;
-	    calendarview.setVisibility(View.INVISIBLE);
-	    navigationview.setVisibility(View.INVISIBLE);
-	    visitorview.setVisibility(View.INVISIBLE);
-	    visitorsearchingview.setVisibility(View.INVISIBLE);
         
-        mSectionsPagerAdapterApprentice = new SectionsPagerAdapterApprentice(getFragmentManager());
+        mApprenticeModeGalleryAdapter = new ApprenticeModeGalleryAdapter(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setVisibility(View.INVISIBLE);
-		
-		deviceview.setOnChildClickListener(new OnChildClickListener() {
-
-			@Override
-			public boolean onChildClick(ExpandableListView parent, View v,
-					int groupPosition, int childPosition, long id) {
-				// TODO Auto-generated method stub
-				currentDevice = childPosition;
-				Toast.makeText(getApplicationContext(), deviceDataHeader.get(groupPosition)+" : "+deviceDataChild.get(deviceDataHeader.get(groupPosition)).get(childPosition), 
-                		Toast.LENGTH_SHORT).show();
-				
-				if (currentDevice == devices.Afinia.ordinal()) {
-					// render direction arrows or signs to Afinia H-series (the small 3D printer)
-				}
-				else if (currentDevice == devices.ProJet.ordinal()) {
-					// render direction arrows or signs to ProJet 3000 (the large 3D printer)
-				}
-				else if (currentDevice == devices.PhotoStudio.ordinal()) {
-					// render direction arrows or signs to Product Photo Studio
-				}
-				else if (currentDevice == devices.VLSLaserCutter.ordinal()) {
-					// render direction arrows or signs to 3D scanner
-				}
-				else if (currentDevice == devices.PowerElectronics.ordinal()) {
-					// render direction arrows or signs to Product Photo Studio
-				}
-				// directions for other devices can be added
-				deviceview.collapseGroup(groupPosition);
-				return false;
-			}
-			
-		});
-		
-        menuview.setOnChildClickListener(new OnChildClickListener() {
-        	@Override
-            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-        		
-        		modeStatus = childPosition;
-                Toast.makeText(getApplicationContext(), listDataHeader.get(groupPosition)+" : "+listDataChild.get(listDataHeader.get(groupPosition)).get(childPosition), 
-                		Toast.LENGTH_SHORT).show();
-                
-                if (modeStatus == modes.modeWorld.ordinal()) {
-                	mViewPager.setVisibility(View.INVISIBLE);
-        			calendarview.setVisibility(View.INVISIBLE);
-        			navigationview.setVisibility(View.INVISIBLE);
-        			visitorview.setVisibility(View.INVISIBLE);
-        			visitorsearchingview.setVisibility(View.INVISIBLE);
-        			flag_prototype = false;
-        			mCameraView.setVisibility(View.VISIBLE);
-                }
-                else if (modeStatus == modes.modeVisitor.ordinal()) {
-                	mViewPager.setVisibility(View.INVISIBLE);
-            		calendarview.setVisibility(View.INVISIBLE);
-            		mCameraView.setVisibility(View.VISIBLE); 
-            		navigationview.setVisibility(View.INVISIBLE);
-            		visitorview.setVisibility(View.INVISIBLE);
-            		visitorsearchingview.setVisibility(View.VISIBLE);
-        			flag_prototype = false;
-                }                
-                else if (modeStatus == modes.modeApprentice.ordinal()) {
-                	mViewPager.setAdapter(mSectionsPagerAdapterApprentice);
-                	mViewPager.setVisibility(View.VISIBLE);
-        			mViewPager.setCurrentItem(0);
-            		calendarview.setVisibility(View.INVISIBLE);
-            		mCameraView.setVisibility(View.INVISIBLE); 
-            		visitorview.setVisibility(View.INVISIBLE);
-            		visitorsearchingview.setVisibility(View.INVISIBLE);
-        			flag_prototype = false;
-            		navigationview.setVisibility(View.INVISIBLE);
-                }
-                else if (modeStatus == modes.modeNavigation.ordinal()) {
-                	mViewPager.setVisibility(View.INVISIBLE);
-        			calendarview.setVisibility(View.INVISIBLE);
-        			mCameraView.setVisibility(View.VISIBLE); 
-            		navigationview.setVisibility(View.VISIBLE);
-            		navigationview.bringToFront();
-            		visitorview.setVisibility(View.INVISIBLE);
-            		visitorsearchingview.setVisibility(View.INVISIBLE);
-        			flag_prototype = false;
-                }
-                else if (modeStatus == modes.modeCalendar.ordinal()) {
-                	mViewPager.setVisibility(View.INVISIBLE);
-        			calendarview.setVisibility(View.VISIBLE);
-        			calendarview.bringToFront();
-        			mCameraView.setVisibility(View.VISIBLE); 
-        			navigationview.setVisibility(View.INVISIBLE);
-        			visitorview.setVisibility(View.INVISIBLE);
-        			visitorsearchingview.setVisibility(View.INVISIBLE);
-        			flag_prototype = false;
-                }
-                menuview.collapseGroup(groupPosition);
-                return true;
-            }
-        });
         
-        menuview.setOnGroupExpandListener(new OnGroupExpandListener() {
-        	@Override
-        	public void onGroupExpand (int groupPosition) {
-        		//listDataHeader.set(groupPosition, "Mode Selection");
-        	}
-        });
-        
-        // set check function
-        check_available.setOnCheckedChangeListener(new OnCheckedChangeListener () {
-			@Override
-			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-				if (arg1) {
-					available = true;
-				}
-				else {
-					available = false;
-				}
-			}
-		});
-        
-        check_occupied.setOnCheckedChangeListener(new OnCheckedChangeListener () {
-			@Override
-			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-				if (arg1) {
-					occupied = true;
-				}
-				else {
-					occupied = false;
-				}
-			}
-		});
-        
-        check_scheduled.setOnCheckedChangeListener(new OnCheckedChangeListener () {
-			@Override
-			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-				if (arg1) {
-					scheduled = true;
-				}
-				else {
-					scheduled = false;
-				}				
-			}
-		});
-        
-        ////////
         initCamera();
 
         // Initiate the Sensor Manager and register this as Listener for the required sensor types:
@@ -422,15 +296,12 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     public void onCameraViewStarted(int width, int height) {
         mGray = new Mat();
         mRgba = new Mat();
-        mHSV = new Mat();
-        mThresh = new Mat();
+        mCameraView.setMinimumWidth(1920);
     }
     
     public void onCameraViewStopped() {
         mGray.release();
         mRgba.release();
-        mHSV.release();
-        mThresh.release();
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
@@ -442,7 +313,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				@Override
 				public void run() {						
 					mLoadingText.setVisibility(View.VISIBLE);
-					menuview.setVisibility(View.INVISIBLE);
 				}
 			});
         }
@@ -451,7 +321,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				@Override
 				public void run() {						
 					mLoadingText.setVisibility(View.INVISIBLE);	
-					menuview.setVisibility(View.VISIBLE);
 				}
 			});
         }
@@ -539,7 +408,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     }
     
     public void updateLocationResults(String locationString) {
-    	// Toast.makeText(this, "Location Fetched: " + locationString, Toast.LENGTH_SHORT).show();
     	int delim = locationString.indexOf(',');
     	if (delim == -1)
     		return;
@@ -616,53 +484,171 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		}	
 	};
 	
+	private class ModesHandler implements AdapterView.OnItemSelectedListener{
+
+		@Override
+		public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+			modeStatus = position;
+			setViewsInvisible();
+			
+            if (modeStatus == modes.modeWorld.ordinal()) {
+    			mCameraView.setVisibility(View.VISIBLE);
+            }
+            else if (modeStatus == modes.modeVisitor.ordinal()) {
+            	actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(true);
+	    		currentPrototypeAfinia = prototypes.TRex.ordinal();
+    	        currentPrototypePJ = currentPrototypePE = currentPrototypePS = currentPrototypeLC = 0;
+	    		if (currentDevice == devices.Afinia.ordinal()) {
+	    			actionBarMenu.findItem(R.id.action_next).setVisible(true);
+		    		actionBarMenu.findItem(R.id.action_prev).setVisible(true);
+	    		}
+	    		else {
+	    			mViewPager.setAdapter(mApprenticeModeGalleryAdapter);
+	            	mViewPager.setVisibility(View.VISIBLE);
+	    			mViewPager.setCurrentItem(0);
+	    			mViewPager.bringToFront();
+	    		}
+            }                
+            else if (modeStatus == modes.modeApprentice.ordinal()) {
+            	actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(true);
+        		mViewPager.setAdapter(mApprenticeModeGalleryAdapter);
+            	mViewPager.setVisibility(View.VISIBLE);
+    			mViewPager.setCurrentItem(0);
+            }
+            else if (modeStatus == modes.modeNavigation.ordinal()) {
+            	actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(true);
+        		mCameraView.setVisibility(View.VISIBLE); 
+            }
+            else if (modeStatus == modes.modeCalendar.ordinal()) {
+    			mCameraView.setVisibility(View.VISIBLE); 
+    			actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_available).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_oc_icon).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_occupied).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_sc_icon).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_scheduled).setVisible(true);
+            }
+		}
+
+		@Override
+		public void onNothingSelected(AdapterView<?> parent) {
+			// TODO Auto-generated method stub
+			
+		}				
+	}
 	
-	public class SectionsPagerAdapterApprentice extends FragmentStatePagerAdapter {
+	public void setViewsInvisible() {
+		mViewPager.setVisibility(View.INVISIBLE);
+		mCameraView.setVisibility(View.INVISIBLE);
+		actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(false);
+		actionBarMenu.findItem(R.id.action_next).setVisible(false);
+		actionBarMenu.findItem(R.id.action_prev).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_available).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_oc_icon).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_occupied).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_sc_icon).setVisible(false);
+		actionBarMenu.findItem(R.id.action_cb_scheduled).setVisible(false);
+	}
+	
+	private class DevicesHandler implements AdapterView.OnItemSelectedListener{
+
+		@Override
+		public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+			currentDevice = position;
+			
+			if (currentDevice == devices.Afinia.ordinal() 
+					&& modeStatus == modes.modeVisitor.ordinal()) {
+				actionBarMenu.findItem(R.id.action_next).setVisible(true);
+	    		actionBarMenu.findItem(R.id.action_prev).setVisible(true);
+	    		mViewPager.setVisibility(View.INVISIBLE);
+			}
+			else if (modeStatus == modes.modeApprentice.ordinal()
+					|| modeStatus == modes.modeVisitor.ordinal()) {
+				mApprenticeModeGalleryAdapter.notifyDataSetChanged();
+    			actionBarMenu.findItem(R.id.action_next).setVisible(false);
+	    		actionBarMenu.findItem(R.id.action_prev).setVisible(false);
+    			mViewPager.setAdapter(mApprenticeModeGalleryAdapter);
+            	mViewPager.setVisibility(View.VISIBLE);
+    			mViewPager.setCurrentItem(0);
+			}
+		}
+
+		@Override
+		public void onNothingSelected(AdapterView<?> parent) {
+			// TODO Auto-generated method stub
+			
+		}				
+	}
+	
+	public class ApprenticeModeGalleryAdapter extends FragmentStatePagerAdapter {
 		
-		public int noOfStepsForAfinia = 3;
-		public int noOfStepsForLaserCutter = 4;
-		public int noOfStepsForProJet = 1;
-		public int noOfStepsForPhotoStudio = 1;
-		public int noOfStepsForPowerElectronics = 4;
+		public int numStepsAfiniaApprentice = 3,
+				numStepsLCApprentice = 4,
+				numStepsPJApprentice = 1,
+				numStepsPSApprentice = 1,
+				numStepsPEApprentice = 3;
 		
-		public SectionsPagerAdapterApprentice(FragmentManager fm) {
+		public int numStepsLCVisitor = 3,
+				numStepsPJVisitor = 3,
+				numStepsPSVisitor = 1,
+				numStepsPEVisitor = 1;
+		
+		public ApprenticeModeGalleryAdapter(FragmentManager fm) {
 			super(fm);
 		}
 
 		@Override
 		public Fragment getItem(int position) {
-			return PlaceholderFragmentApprentice.newInstance(position + 1);
+			return ApprenticeModeGalleryFragment.newInstance(position + 1);
 		}
 
 		@Override
+		public int getItemPosition(Object object) {
+		    return POSITION_NONE;
+		}
+		
+		@Override
 		public int getCount() {
-			if (currentDevice == devices.Afinia.ordinal())
-				return noOfStepsForAfinia;
-			else if (currentDevice == devices.VLSLaserCutter.ordinal())
-				return noOfStepsForLaserCutter;
-			else if (currentDevice == devices.PhotoStudio.ordinal())
-				return noOfStepsForPhotoStudio;
-			else if (currentDevice == devices.ProJet.ordinal())
-				return noOfStepsForProJet;
-			else if (currentDevice == devices.PowerElectronics.ordinal())
-				return noOfStepsForPowerElectronics;
-			else
-				return 0;
+			int count = 0;
+			if (modeStatus == modes.modeApprentice.ordinal()) {
+				if (currentDevice == devices.Afinia.ordinal())
+					count = numStepsAfiniaApprentice;
+				else if (currentDevice == devices.VLSLaserCutter.ordinal())
+					count = numStepsLCApprentice;
+				else if (currentDevice == devices.PhotoStudio.ordinal())
+					count = numStepsPSApprentice;
+				else if (currentDevice == devices.ProJet.ordinal())
+					count = numStepsPJApprentice;
+				else if (currentDevice == devices.PowerElectronics.ordinal())
+					count = numStepsPEApprentice;
+			}
+			else if (modeStatus == modes.modeVisitor.ordinal()) {
+				if (currentDevice == devices.VLSLaserCutter.ordinal())
+					count = numStepsLCVisitor;
+				else if (currentDevice == devices.PhotoStudio.ordinal())
+					count = numStepsPSVisitor;
+				else if (currentDevice == devices.ProJet.ordinal())
+					count = numStepsPJVisitor;
+				else if (currentDevice == devices.PowerElectronics.ordinal())
+					count = numStepsPEVisitor;
+			}
+			return count;
 		}
 	}
 
-	public static class PlaceholderFragmentApprentice extends Fragment {
+	public static class ApprenticeModeGalleryFragment extends Fragment {
 		private static final String ARG_SECTION_NUMBER = "section_number";
 
-		public static PlaceholderFragmentApprentice newInstance(int sectionNumber) {
-			PlaceholderFragmentApprentice fragment = new PlaceholderFragmentApprentice();
+		public static ApprenticeModeGalleryFragment newInstance(int sectionNumber) {
+			ApprenticeModeGalleryFragment fragment = new ApprenticeModeGalleryFragment();
 			Bundle args = new Bundle();
 			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
 			fragment.setArguments(args);
 			return fragment;
 		}
 
-		public PlaceholderFragmentApprentice() {
+		public ApprenticeModeGalleryFragment() {
 		}
 
 		@Override
@@ -671,116 +657,73 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			int sectionNum = getArguments().getInt(ARG_SECTION_NUMBER);
 			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
 			textView.setText(Integer.toString(sectionNum));
-			
 			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
-			
-			// Need a better way of dynamically reading images
-			if (currentDevice == devices.Afinia.ordinal()) {
-				if (sectionNum == 1)
-					imgView.setImageResource(R.drawable.af_step1);
-				else if (sectionNum == 2)
-					imgView.setImageResource(R.drawable.af_step2);
-				else if (sectionNum == 3)
-					imgView.setImageResource(R.drawable.af_step3);
+
+			if (modeStatus == modes.modeApprentice.ordinal()) {
+				if (currentDevice == devices.Afinia.ordinal()) {
+					if (sectionNum == 1)
+						imgView.setImageResource(R.drawable.af_step1);
+					else if (sectionNum == 2)
+						imgView.setImageResource(R.drawable.af_step2);
+					else if (sectionNum == 3)
+						imgView.setImageResource(R.drawable.af_step3);
+				}
+				else if (currentDevice == devices.VLSLaserCutter.ordinal()) {
+					if (sectionNum == 1)
+						imgView.setImageResource(R.drawable.lc_step1);
+					else if (sectionNum == 2)
+						imgView.setImageResource(R.drawable.lc_step2);
+					else if (sectionNum == 3)
+						imgView.setImageResource(R.drawable.lc_step3);
+					else if (sectionNum == 4)
+						imgView.setImageResource(R.drawable.lc_step4);
+				}
+				else if (currentDevice == devices.ProJet.ordinal()) {
+					if (sectionNum == 1)
+						imgView.setImageResource(R.drawable.pj_step1);
+				}
+				else if (currentDevice == devices.PhotoStudio.ordinal()) {
+					if (sectionNum == 1)
+						imgView.setImageResource(R.drawable.ps_step1);
+				}
+				else if (currentDevice == devices.PowerElectronics.ordinal()) {
+					if (sectionNum == 1)
+						imgView.setImageResource(R.drawable.pe_step1);
+					else if (sectionNum == 2)
+						imgView.setImageResource(R.drawable.pe_step2);
+					else if (sectionNum == 3)
+						imgView.setImageResource(R.drawable.pe_step3);
+				}
 			}
-			else if (currentDevice == devices.VLSLaserCutter.ordinal()) {
-				if (sectionNum == 1)
-					imgView.setImageResource(R.drawable.lc_step1);
-				else if (sectionNum == 2)
-					imgView.setImageResource(R.drawable.lc_step2);
-				else if (sectionNum == 3)
-					imgView.setImageResource(R.drawable.lc_step3);
-				else if (sectionNum == 4)
-					imgView.setImageResource(R.drawable.lc_step4);
-			}
-			else if (currentDevice == devices.ProJet.ordinal()) {
-				if (sectionNum == 1)
-					imgView.setImageResource(R.drawable.pj_step1);
-			}
-			else if (currentDevice == devices.PhotoStudio.ordinal()) {
-				if (sectionNum == 1)
-					imgView.setImageResource(R.drawable.ps_step1);
-			}
-			else if (currentDevice == devices.PowerElectronics.ordinal()) {
-				if (sectionNum == 1)
-					imgView.setImageResource(R.drawable.pe_step1);
-				else if (sectionNum == 2)
-					imgView.setImageResource(R.drawable.pe_step2);
-				else if (sectionNum == 3)
-					imgView.setImageResource(R.drawable.pe_step3);
-				else if (sectionNum == 4)
-					imgView.setImageResource(R.drawable.pe_step4);
+			else if (modeStatus == modes.modeVisitor.ordinal()) {
+				if (currentDevice == devices.VLSLaserCutter.ordinal()) {
+					if (sectionNum == 1)
+						imgView.setImageResource(R.drawable.lc_p1);
+					else if (sectionNum == 2)
+						imgView.setImageResource(R.drawable.lc_p3);
+					else if (sectionNum == 3)
+						imgView.setImageResource(R.drawable.lc_p2);
+				}
+				else if (currentDevice == devices.ProJet.ordinal()) {
+					if (sectionNum == 1)
+						imgView.setImageResource(R.drawable.pj_p1);
+					else if (sectionNum == 2)
+						imgView.setImageResource(R.drawable.pj_p2);
+					else if (sectionNum == 3)
+						imgView.setImageResource(R.drawable.pj_p3);
+				}
+				else if (currentDevice == devices.PhotoStudio.ordinal()) {
+					if (sectionNum == 1)
+						imgView.setImageResource(R.drawable.ps_step1);
+				}
+				else if (currentDevice == devices.PowerElectronics.ordinal()) {
+					if (sectionNum == 1)
+						imgView.setImageResource(R.drawable.pe_p1);
+				}
 			}
 			return rootView;
 		}
-	}	
-	
-	private void prepareListData() {
-        listDataHeader = new ArrayList<String>();
-        listDataChild = new HashMap<String, List<String>>();
-        deviceDataHeader = new ArrayList<String>();
-        deviceDataChild = new HashMap<String, List<String>>();
-        
-        // Adding child data
-        listDataHeader.add("Modes");
-        deviceDataHeader.add("Devices");
- 
-        // Adding child data
-        List<String> modegroup = new ArrayList<String>();
-        modegroup.add("World");
-        modegroup.add("Visitor");
-        modegroup.add("Apprentice");
-        modegroup.add("Navigation");
-        modegroup.add("Calendar");
-
-        List<String> devicegroup = new ArrayList<String>();
-        devicegroup.add("Afinia H-series");
-        devicegroup.add("ProJet 3000");
-        devicegroup.add("Product Photo Studio");
-        devicegroup.add("VLS Laser Cutter");
-        devicegroup.add("Power Electronics");
- 
-        listDataChild.put(listDataHeader.get(0), modegroup); // Header, Child data
-        deviceDataChild.put(deviceDataHeader.get(0), devicegroup);
-    }
-
-	// button click event
-	public void myButtonClickHandler(View view) {
-        switch (view.getId()) {
-        case R.id.nextPrototypeButton:
-        	if (currentDevice == devices.Afinia.ordinal()) {
-	        	if (prototypeStatus == prototype.Prototype2.ordinal()) {
-	        		prototypeStatus = prototype.TRex.ordinal();
-	        	}
-	        	else {
-	        		prototypeStatus++;
-	        	}
-        	}
-            break;
-        case R.id.lastPrototypeButton:
-        	if (currentDevice == devices.Afinia.ordinal()) {
-	        	if (prototypeStatus == prototype.TRex.ordinal()) {
-	        		prototypeStatus = prototype.Prototype2.ordinal();
-	        	}
-	        	else {
-	        		prototypeStatus--;
-	        	}
-        	}
-            break;
-        case R.id.showPrototypeButton:
-        	visitorview.setVisibility(View.VISIBLE);
-        	flag_prototype = true;
-        	visitorsearchingview.setVisibility(View.INVISIBLE);
-        	mCameraView.setVisibility(View.INVISIBLE);
-        	break;
-        case R.id.hidePrototypeButton:
-        	visitorsearchingview.setVisibility(View.VISIBLE);
-        	visitorview.setVisibility(View.INVISIBLE);
-        	flag_prototype = false;
-        	mCameraView.setVisibility(View.VISIBLE);
-        	break;
-        }
-    }
+	}
 	
 	@Override 
     public boolean onTouchEvent(MotionEvent event){ 

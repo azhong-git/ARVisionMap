@@ -1,17 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">ARVision</string>
+    <string name="app_name">Augmented Lab</string>
     <string name="action_settings">Settings</string>
     <string name="view_pager_string">Products</string>
+    <string name="gallery_string">Products</string>
     <string name="loading_string">Loading..</string>
 	<string name="cb_scheduled">Scheduled soon</string>
 	<string name="cb_occupied">Occupied</string>
 	<string name="cb_available">Available</string>
-	<string name="next_prototype">Next</string>
-	<string name="prev_prototype">Previous</string>
-	<string name="search_view">Exit Gallery</string>
-	<string name="view_prototypes">Gallery</string>
-	<string name="device_in_view">Afinia H-series</string>
-	<string name="visitor_helper_text">You are looking at</string>
+	<string name="action_next_prototype">Next</string>
+	<string name="action_prev_prototype">Prev</string>
+	<string name="modes_list_title">Modes</string>
+	<string name="devices_list_title">Devices</string>
+	
+	<string-array name="modes_list">
+        <item>World mode</item>
+        <item>Visitor mode</item>
+        <item>Apprentice mode</item>
+        <item>Navigation mode</item>
+        <item>Calendar mode</item>
+    </string-array>
+    
+	<string-array name="devices_list">
+        <item>Afinia H-series</item>
+        <item>ProJet 3000</item>
+        <item>Product Photo Studio</item>
+        <item>VLS Laser Cutter</item>
+        <item>Power Electronics</item>
+    </string-array>
+
 </resources>

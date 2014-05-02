@@ -3,166 +3,29 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:background="#000000"
     android:orientation="vertical" >
 
-    <FrameLayout 
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
-	    <FrameLayout
-	        android:id="@+id/camera_preview"
-	        android:layout_width="fill_parent"
-	        android:layout_height="fill_parent" >
-	    </FrameLayout>
-	    
-	    <TextView
-	        android:id="@+id/loading_text"
-	        android:layout_height="wrap_content"
-	        android:layout_width="wrap_content"
-	        android:text="@string/loading_string"
-	        android:textColor="#ffffff"
-	        android:layout_gravity="center"
-	        android:textSize="60sp"> 
-	    </TextView>
-	    
-	    <android.support.v4.view.ViewPager 
-		    android:id="@+id/pager"
-		    android:layout_width="fill_parent"
-		    android:layout_height="fill_parent"
-	    	tools:context="com.example.augmentedreality.ARVIsionActivity" />
-    </FrameLayout>
-
-    <ExpandableListView
-       	android:id="@+id/expandableListView"
-       	android:layout_width="220dp"
-       	android:layout_height="wrap_content"
-       	android:background="@android:color/transparent" >
-       	<!--  android:background="#000000"
-       	android:alpha="1"-->
-   	</ExpandableListView>    	
-    
-	<FrameLayout
-	    android:id="@+id/calendar_control_overlay"
-	    android:layout_width="fill_parent"
-	    android:layout_height="fill_parent">	    
-	    
-		<CheckBox
-		    android:id="@+id/checkbox_scheduled"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:text="@string/cb_scheduled"
-		    android:layout_gravity="bottom|left" />
-		<CheckBox
-		    android:id="@+id/checkbox_occupied"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:text="@string/cb_occupied"		    
-		    android:layout_gravity="bottom|left"
-		    android:layout_marginBottom="40dp" />
-		<CheckBox
-		    android:id="@+id/checkbox_available"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:text="@string/cb_available"
-		    android:layout_gravity="bottom|left"
-		    android:layout_marginBottom="80dp" />
-    </FrameLayout>
-    
-	<FrameLayout
-	    android:id="@+id/navigation_control_overlay"
-	    android:layout_width="fill_parent"
-	    android:layout_height="fill_parent">
-		
-		<ExpandableListView
-       		android:id="@+id/deviceExpandableListView"
-       		android:layout_width="220dp"
-       		android:layout_height="wrap_content"
-       		android:background="@android:color/transparent"
-       		android:layout_gravity="top|right">
-       		<!--  android:background="#000000"
-       		android:alpha="1" -->
-   		</ExpandableListView>
-	</FrameLayout>
-	
-	<FrameLayout
-	    android:id="@+id/visitor_control_overlay"
-	    android:layout_width="fill_parent"
-	    android:layout_height="fill_parent">
-		
-	    <Button
-            android:id="@+id/nextPrototypeButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|right"
-            android:onClick="myButtonClickHandler"
-            android:layout_marginBottom="50dp"
-            android:layout_marginRight="50dp"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#ffffff"
-            android:background="@android:color/transparent"
-            android:text="@string/next_prototype" />
-	    <Button
-            android:id="@+id/lastPrototypeButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|left"
-            android:onClick="myButtonClickHandler"
-            android:layout_marginBottom="50dp"
-            android:layout_marginLeft="50dp"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#ffffff"
-            android:background="@android:color/transparent"
-            android:text="@string/prev_prototype" />
-	    <Button
-            android:id="@+id/hidePrototypeButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center"
-            android:onClick="myButtonClickHandler"
-            android:layout_marginBottom="50dp"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#ffffff"
-            android:background="@android:color/transparent"
-            android:text="@string/search_view" />
-    </FrameLayout>
-    
     <FrameLayout
-	    android:id="@+id/visitor_searching_overlay"
-	    android:layout_width="fill_parent"
-	    android:layout_height="fill_parent">
-		
-	    <Button
-            android:id="@+id/showPrototypeButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center"
-            android:onClick="myButtonClickHandler"
-            android:layout_marginBottom="50dp"
-            android:textSize="24sp"
-            android:textColor="#ffffff"
-            android:background="@android:color/transparent"
-            android:text="@string/view_prototypes" />
-	    <TextView
-	        android:id="@+id/helpingText"
-	        android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|center"
-            android:layout_marginTop="200dp"
-            android:textSize="24sp"
-            android:textStyle="italic"
-            android:textColor="#ffffff"
-            android:text="@string/visitor_helper_text"/>
-	    <TextView
-	        android:id="@+id/targetDeviceName"
-	        android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|center"
-            android:layout_marginTop="250dp"
-            android:textSize="24sp"
-            android:textStyle="italic|bold"
-            android:textColor="#ffff00"
-            android:text="@string/device_in_view"/>
+        android:id="@+id/camera_preview"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
     </FrameLayout>
+    
+    <TextView
+        android:id="@+id/loading_text"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="@string/loading_string"
+        android:textColor="#ffffff"
+        android:layout_centerInParent="true"
+        android:textSize="60sp"> 
+    </TextView>
+    
+    <android.support.v4.view.ViewPager 
+	    android:id="@+id/pager"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent"
+    	tools:context="com.example.augmentedreality.ARVIsionActivity" />
+
 </RelativeLayout>

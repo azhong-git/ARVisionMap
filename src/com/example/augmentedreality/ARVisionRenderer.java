@@ -435,9 +435,10 @@ public class ARVisionRenderer implements Renderer {
 			}
 		}
 		
-		// visitor mode
-		if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeVisitor.ordinal()){
-			if (ARVIsionActivity.prototypeStatus == ARVIsionActivity.prototype.TRex.ordinal() && ARVIsionActivity.flag_prototype == true) {
+		// visitor mode - Afinia
+		if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeVisitor.ordinal()
+				&& ARVIsionActivity.currentDevice == ARVIsionActivity.devices.Afinia.ordinal()){
+			if (ARVIsionActivity.currentPrototypeAfinia == ARVIsionActivity.prototypes.TRex.ordinal()) { 
 				vertexObjectProgram.useProgram();
 				vertexObjectProgram.setUniforms(exhibitFinalMatrix);
 				vertexObject.bindData(vertexObjectProgram);

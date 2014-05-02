@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+        
+    <item android:id="@+id/action_cb_av_icon"
+          android:title="@string/cb_available"
+          android:icon="@drawable/square_white"
+          android:enabled="false"
+          android:visible="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_cb_available"
+          android:title="@string/cb_available"
+          android:checkable="true"
+          android:checked="false"
+          android:visible="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_cb_oc_icon"
+          android:title="@string/cb_occupied"
+          android:icon="@drawable/square_white"
+          android:enabled="false"
+          android:visible="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_cb_occupied"
+          android:title="@string/cb_occupied"
+          android:checkable="true"
+          android:checked="false"
+          android:visible="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_cb_sc_icon"
+          android:title="@string/cb_scheduled"
+          android:icon="@drawable/square_white"
+          android:enabled="false"
+          android:visible="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_cb_scheduled"
+          android:title="@string/cb_scheduled"
+          android:checkable="true"
+          android:checked="false"
+          android:visible="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_prev"
+          android:title="@string/action_prev_prototype"
+          android:visible="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_next"
+          android:title="@string/action_next_prototype"
+          android:visible="false"
+          android:showAsAction="always" />
+    
+    <item android:id="@+id/action_devices_spinner"
+          android:title="@string/devices_list_title"
+          android:showAsAction="always" 
+          android:visible="false"
+          android:actionViewClass="android.widget.Spinner" />
+    
+    <item android:id="@+id/action_modes_spinner"
+          android:title="@string/modes_list_title"
+          android:showAsAction="always" 
+          android:actionViewClass="android.widget.Spinner" />
+</menu>
