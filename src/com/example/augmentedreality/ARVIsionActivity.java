@@ -67,6 +67,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	static public int modeStatus;
     
     static public enum devices {Afinia, ProJet, PhotoStudio, VLSLaserCutter, PowerElectronics}; 
+    static final String [] listOfDevices = {"Afinia H-series", "ProJet 3000", "Photo Studio", "VLS Laser Cutter", "Power Electronics"}; 
 	static public int currentDevice;
 	
 	// sample for visitor mode
@@ -748,7 +749,17 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	@Override
 	public void onLongPress(MotionEvent arg0) {
 		// TODO Auto-generated method stub
+		Log.d("DEBUG", "onLongPress: " + arg0.toString());
+		float x = arg0.getX();
+		float half = (x-600)/600*(float)(Math.tan(Math.toRadians(35)) * ARVisionRenderer.near);
 		
+		float angle = (float) (mAzimuth + Math.toDegrees(Math.atan(half/ARVisionRenderer.near)));
+		int deviceNo = ARVisionRenderer.getNearestDevice((float)dx, (float)dy, (float)dz, angle);
+
+		Log.d("DEBUG", "onLongPress: Angle: " + angle);
+		Log.d("DEBUG", "onLongPress: Device: " + deviceNo);
+		if (deviceNo > 0)
+			Toast.makeText(getApplicationContext(), listOfDevices[deviceNo], Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
