@@ -13,6 +13,7 @@
 	<string name="action_prev_prototype">Prev</string>
 	<string name="modes_list_title">Modes</string>
 	<string name="devices_list_title">Devices</string>
+	<string name="back_calendar">Back</string>
 	
 	<string-array name="modes_list">
         <item>World mode</item>
