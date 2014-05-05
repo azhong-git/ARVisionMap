@@ -445,7 +445,6 @@ public class ARVisionRenderer implements Renderer {
 		// visitor mode - Afinia
 		if (ARVIsionActivity.currentMode == ARVIsionActivity.modes.modeVisitor.ordinal()
 				&& ARVIsionActivity.currentDevice == ARVIsionActivity.devices.Afinia.ordinal()){
-			//if (ARVIsionActivity.currentPrototypeAfinia == ARVIsionActivity.prototypes.TRex.ordinal()) 
 			{ 
 				int order = ARVIsionActivity.currentPrototypeAfinia;
 				vertexObjectProgram.useProgram();

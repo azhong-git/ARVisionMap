@@ -24,7 +24,6 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
@@ -50,6 +49,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
@@ -103,6 +103,20 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	
 	private GestureDetectorCompat mDetector; 
 	private ScaleGestureDetector mScaleDetector;
+	
+	WebView mCalendarWebView;
+	static final String [] calendarURLs = {
+		// Afinia
+		"https://www.google.com/calendar/embed?src=berkeley.edu_lapb3d824hnl25kjn9v9ksobj8@group.calendar.google.com&ctz=America/Los_Angeles",
+		// ProJet
+		"https://www.google.com/calendar/embed?src=berkeley.edu_i7rvm52rkjtlbh0hfq4oko6n58@group.calendar.google.com&ctz=America/Los_Angeles",
+		// Photo Studio
+		"https://www.google.com/calendar/embed?src=berkeley.edu_npnr4vuf669otnpb2479v6ipeg@group.calendar.google.com&ctz=America/Los_Angeles",
+		// Laser Cutter
+		"https://www.google.com/calendar/embed?src=berkeley.edu_373035363931382d363930@resource.calendar.google.com",
+		// Power Electronics
+		"https://www.google.com/calendar/embed?src=berkeley.edu_gi10ouu5qouj3gav7a9vfpdsh8@group.calendar.google.com&ctz=America/Los_Angeles"
+	};
 	
 	// sensors
     private SensorManager mSensMan;
@@ -196,6 +210,18 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
     			actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
 	        	break;
 	            
+	        case R.id.action_back_calendar:
+	        	setViewsInvisible();
+	        	mCameraView.setVisibility(View.VISIBLE); 
+    			actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_available).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_oc_icon).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_occupied).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_sc_icon).setVisible(true);
+    			actionBarMenu.findItem(R.id.action_cb_scheduled).setVisible(true);
+	        	break;
+	        	
 	        case R.id.action_cb_occupied:
 	        	isChecked = item.isChecked();
 	        	item.setChecked(!isChecked);
@@ -256,6 +282,9 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setVisibility(View.INVISIBLE);
         
+		mCalendarWebView = (WebView) findViewById(R.id.calendar_webview);
+		mCalendarWebView.getSettings().setJavaScriptEnabled(true);
+		
         initCamera();
 
         // Initiate the Sensor Manager and register this as Listener for the required sensor types:
@@ -529,11 +558,13 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	public void setViewsInvisible() {
 		mViewPager.setVisibility(View.INVISIBLE);
 		mCameraView.setVisibility(View.INVISIBLE);
+		mCalendarWebView.setVisibility(View.INVISIBLE);
 		actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(false);
 		actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(false);
 		actionBarMenu.findItem(R.id.action_next).setVisible(false);
 		actionBarMenu.findItem(R.id.action_prev).setVisible(false);
 		actionBarMenu.findItem(R.id.action_back).setVisible(false);
+		actionBarMenu.findItem(R.id.action_back_calendar).setVisible(false);
 		actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(false);
 		actionBarMenu.findItem(R.id.action_cb_available).setVisible(false);
 		actionBarMenu.findItem(R.id.action_cb_oc_icon).setVisible(false);
@@ -746,54 +777,60 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		float half = (x-600)/600*(float)(Math.tan(Math.toRadians(35)) * ARVisionRenderer.near);
 		
 		float angle = (float) (mAzimuth + Math.toDegrees(Math.atan(half/ARVisionRenderer.near)));
+		// angle -= 20;
 		int deviceNo = ARVisionRenderer.getNearestDevice((float)dx, (float)dy, (float)dz, angle);
 
 		Log.d("DEBUG", "onLongPress: Angle: " + angle);
 		Log.d("DEBUG", "onLongPress: Device: " + deviceNo);
 
-		//if (deviceNo >= 0)
-		//	Toast.makeText(getApplicationContext(), listOfDevices[deviceNo], Toast.LENGTH_SHORT).show();
-
-		if (deviceNo >= 0 && currentMode == modes.modeWorld.ordinal())
-		{
-			currentDevice = devices.values()[deviceNo].ordinal();
-			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-    		alertDialogBuilder.setTitle("Device selected: " + listOfDevices[currentDevice]);
-    		alertDialogBuilder.setMessage("Select one of the following modes");
-    		alertDialogBuilder.setCancelable(true);
-    		alertDialogBuilder.setNegativeButton("Visitor mode",new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog,int id) {
-					currentMode = modes.modeVisitor.ordinal();
-					actionBarMenu.findItem(R.id.action_back).setTitle("Exit Visitor Mode");
-					setViewsInvisible();
-					actionBarMenu.findItem(R.id.action_back).setVisible(true);
-		    		if (currentDevice == devices.Afinia.ordinal()) {
-		    			currentPrototypeAfinia = prototypes.TRex.ordinal();
-		    			actionBarMenu.findItem(R.id.action_next).setVisible(true);
-			    		actionBarMenu.findItem(R.id.action_prev).setVisible(true);
-		    		}
-		    		else {
-		    			mViewPager.setAdapter(mGalleryAdapter);
+		if (deviceNo >= 0) {
+			if (currentMode == modes.modeWorld.ordinal()) {
+				currentDevice = devices.values()[deviceNo].ordinal();
+				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+	    		alertDialogBuilder.setTitle("Device selected: " + listOfDevices[currentDevice]);
+	    		alertDialogBuilder.setMessage("Select one of the following modes");
+	    		alertDialogBuilder.setCancelable(true);
+	    		alertDialogBuilder.setNegativeButton("Visitor mode",new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog,int id) {
+						currentMode = modes.modeVisitor.ordinal();
+						actionBarMenu.findItem(R.id.action_back).setTitle("Exit Visitor Mode");
+						setViewsInvisible();
+						actionBarMenu.findItem(R.id.action_back).setVisible(true);
+			    		if (currentDevice == devices.Afinia.ordinal()) {
+			    			currentPrototypeAfinia = prototypes.TRex.ordinal();
+			    			actionBarMenu.findItem(R.id.action_next).setVisible(true);
+				    		actionBarMenu.findItem(R.id.action_prev).setVisible(true);
+			    		}
+			    		else {
+			    			mViewPager.setAdapter(mGalleryAdapter);
+			            	mViewPager.setVisibility(View.VISIBLE);
+			    			mViewPager.setCurrentItem(0);
+			    			mViewPager.bringToFront();
+			    		}
+					}
+				});
+	    		alertDialogBuilder.setPositiveButton("Apprentice mode",new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog,int id) {
+						setViewsInvisible();
+						currentMode = modes.modeApprentice.ordinal();
+						actionBarMenu.findItem(R.id.action_back).setTitle("Exit Apprentice Mode");
+						actionBarMenu.findItem(R.id.action_back).setVisible(true);
+		        		mViewPager.setAdapter(mGalleryAdapter);
 		            	mViewPager.setVisibility(View.VISIBLE);
 		    			mViewPager.setCurrentItem(0);
-		    			mViewPager.bringToFront();
-		    		}
-				}
-			});
-    		alertDialogBuilder.setPositiveButton("Apprentice mode",new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog,int id) {
-					setViewsInvisible();
-					currentMode = modes.modeApprentice.ordinal();
-					actionBarMenu.findItem(R.id.action_back).setTitle("Exit Apprentice Mode");
-					actionBarMenu.findItem(R.id.action_back).setVisible(true);
-	        		mViewPager.setAdapter(mGalleryAdapter);
-	            	mViewPager.setVisibility(View.VISIBLE);
-	    			mViewPager.setCurrentItem(0);
-				}
-			});
-     
-			AlertDialog alertDialog = alertDialogBuilder.create();
-			alertDialog.show();
+					}
+				});
+	     
+				AlertDialog alertDialog = alertDialogBuilder.create();
+				alertDialog.show();
+			}
+			else if (currentMode == modes.modeCalendar.ordinal()) {
+				currentDevice = devices.values()[deviceNo].ordinal();
+				setViewsInvisible();
+				mCalendarWebView.setVisibility(View.VISIBLE);
+				mCalendarWebView.loadUrl(calendarURLs[currentDevice]);
+				actionBarMenu.findItem(R.id.action_back_calendar).setVisible(true);
+			}
 		}
 
 	}
