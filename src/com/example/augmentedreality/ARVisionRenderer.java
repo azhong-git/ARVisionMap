@@ -73,12 +73,12 @@ public class ARVisionRenderer implements Renderer {
 	private float[] navigationFinalMatrix;
 	
 	// separate matrices for exhibits (compass never moves out of screen)
-	private float[] exhibitModelMatrix;
-	private float[] exhibitRotationMatrix;
-	private float[] exhibitTranslationMatrix;
-	private float[] exhibitViewMatrix;
-	private float[] exhibitModelViewMatrix;
-	private float[] exhibitFinalMatrix;
+	private float[][] exhibitModelMatrix;
+	private float[][] exhibitRotationMatrix;
+	private float[][] exhibitTranslationMatrix;
+	private float[][] exhibitViewMatrix;
+	private float[][] exhibitModelViewMatrix;
+	private float[][] exhibitFinalMatrix;
 
 	// helper matrices for setting up camera lookat
 	float[] forward;
@@ -100,7 +100,7 @@ public class ARVisionRenderer implements Renderer {
 
 	private final float zcompass = 1f;
 	private final float znavigation = 1.2f;
-	private final float zexhibit = 1.2f;
+	private final float [] zexhibit = {1.2f, 1.8f, 2f};
 
 	// other parameters
 	private float x = 0;
@@ -149,8 +149,9 @@ public class ARVisionRenderer implements Renderer {
 	private Square navigation;
 	private int navigationTexture;
 	
-	private RawVertexObject vertexObject;
-	private int rawVertexObjFile = R.drawable.trexobj;
+	private RawVertexObject [] vertexObject;
+	private int [] rawVertexObjFile = {R.drawable.trexobj, R.drawable.teapot, R.drawable.cal};
+	public static int numRawObj = 3;
 
 	// object without texture
 	private Arrow[] arrow;
@@ -237,12 +238,12 @@ public class ARVisionRenderer implements Renderer {
 		navigationFinalMatrix = new float[16];
 		
 		// separate matrices for exhibit (compass never moves out of screen)
-		exhibitModelMatrix = new float[16];
-		exhibitRotationMatrix = new float[16];
-		exhibitTranslationMatrix = new float[16];
-		exhibitViewMatrix = new float[16];
-		exhibitModelViewMatrix = new float[16];
-		exhibitFinalMatrix = new float[16];
+		exhibitModelMatrix = new float[numRawObj][16];
+		exhibitRotationMatrix = new float[numRawObj][16];
+		exhibitTranslationMatrix = new float[numRawObj][16];
+		exhibitViewMatrix = new float[numRawObj][16];
+		exhibitModelViewMatrix = new float[numRawObj][16];
+		exhibitFinalMatrix = new float[numRawObj][16];
 
 		// helper matrices for setting up camera lookat
 		forward = new float[3];
@@ -264,9 +265,10 @@ public class ARVisionRenderer implements Renderer {
 		for (i = 0; i < numRawObjects; i++) {
 			object[i] = new RawObject(context, rawObjTextureMap[objectTexture[i+numCaptions]]);
 		}
-		
-		vertexObject = new RawVertexObject(context, rawVertexObjFile);
-		
+		vertexObject = new RawVertexObject[numRawObj];
+		for (i = 0; i < 3; i++) {
+			vertexObject[i] = new RawVertexObject(context, rawVertexObjFile[i]);
+		}
 		// initialize arrows
 		arrow = new Arrow[numArrows];
 		for (i = 0; i < numArrows; i++) {
@@ -338,10 +340,12 @@ public class ARVisionRenderer implements Renderer {
 		setIdentityM(navigationTranslationMatrix, 0);
 		translateM(navigationTranslationMatrix, 0, 0f, 0f, -znavigation);
 		
-		setIdentityM(exhibitRotationMatrix, 0);
-		setIdentityM(exhibitTranslationMatrix, 0);
-		translateM(exhibitTranslationMatrix, 0, 0f, 0f, -zexhibit);
-
+		for (i = 0; i < numRawObj; i++) {
+			setIdentityM(exhibitRotationMatrix[i], 0);
+			setIdentityM(exhibitTranslationMatrix[i], 0);
+			translateM(exhibitTranslationMatrix[i], 0, 0f, 0f, -zexhibit[i]);
+		}
+		
 		for (i = 0; i < numTextures; i++) {
 			translateM(translationMatrix[i], 0, objLoc[i][0], objLoc[i][1], objLoc[i][2]);
 			rotateM(rotationMatrix[i], 0, objRot[i][0], 1, 0, 0);
@@ -368,9 +372,11 @@ public class ARVisionRenderer implements Renderer {
 				navigationViewMatrix, navigationModelViewMatrix,
 				sensorProjectionMatrix, navigationFinalMatrix);
 		
-		multiplyMVP(exhibitRotationMatrix, exhibitTranslationMatrix, exhibitModelMatrix,
-				exhibitViewMatrix, exhibitModelViewMatrix,
-				sensorProjectionMatrix, exhibitFinalMatrix);
+		for (i = 0 ; i< numRawObj; i++) {
+			multiplyMVP(exhibitRotationMatrix[i], exhibitTranslationMatrix[i], exhibitModelMatrix[i],
+					exhibitViewMatrix[i], exhibitModelViewMatrix[i],
+					sensorProjectionMatrix, exhibitFinalMatrix[i]);
+		}
 	}
 
 	@Override
@@ -379,8 +385,8 @@ public class ARVisionRenderer implements Renderer {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-		if (ARVIsionActivity.modeStatus != ARVIsionActivity.modes.modeVisitor.ordinal() 
-				&& ARVIsionActivity.modeStatus != ARVIsionActivity.modes.modeApprentice.ordinal()) {
+		if (ARVIsionActivity.currentMode != ARVIsionActivity.modes.modeVisitor.ordinal() 
+				&& ARVIsionActivity.currentMode != ARVIsionActivity.modes.modeApprentice.ordinal()) {
 			int i = numCaptions;
 	
 			objectProgram.useProgram();
@@ -390,7 +396,7 @@ public class ARVisionRenderer implements Renderer {
 				object[i-numCaptions].draw();
 			}
 			
-			if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeCalendar.ordinal()) {
+			if (ARVIsionActivity.currentMode == ARVIsionActivity.modes.modeCalendar.ordinal()) {
 				int selectedObjs[] = {0, 0, 0};
 				if (ARVIsionActivity.available) {					
 					selectedObjs[0] = 1;
@@ -423,7 +429,7 @@ public class ARVisionRenderer implements Renderer {
 			}
 			
 			transparentProgram.useProgram();
-			if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeNavigation.ordinal()) {
+			if (ARVIsionActivity.currentMode == ARVIsionActivity.modes.modeNavigation.ordinal()) {
 				transparentProgram.setUniforms(navigationFinalMatrix, navigationTexture);
 				navigation.bindData(transparentProgram);
 				navigation.draw();
@@ -436,15 +442,16 @@ public class ARVisionRenderer implements Renderer {
 		}
 		
 		// visitor mode - Afinia
-		if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeVisitor.ordinal()
+		if (ARVIsionActivity.currentMode == ARVIsionActivity.modes.modeVisitor.ordinal()
 				&& ARVIsionActivity.currentDevice == ARVIsionActivity.devices.Afinia.ordinal()){
-			if (ARVIsionActivity.currentPrototypeAfinia == ARVIsionActivity.prototypes.TRex.ordinal()) { 
+			//if (ARVIsionActivity.currentPrototypeAfinia == ARVIsionActivity.prototypes.TRex.ordinal()) 
+			{ 
+				int order = ARVIsionActivity.currentPrototypeAfinia;
 				vertexObjectProgram.useProgram();
-				vertexObjectProgram.setUniforms(exhibitFinalMatrix);
-				vertexObject.bindData(vertexObjectProgram);
-				vertexObject.draw();
+				vertexObjectProgram.setUniforms(exhibitFinalMatrix[order]);
+				vertexObject[order].bindData(vertexObjectProgram);
+				vertexObject[order].draw();
 			}
-			// TODO implement multiple prototype rendering
 		}
 	}
 
@@ -511,7 +518,7 @@ public class ARVisionRenderer implements Renderer {
 			setLookAtM(navigationViewMatrix, 0, 0f, 0f, 0f, 0f, y+0.3f, -1f, a
 					* up_portrait[0] - b, a * up_portrait[1], a
 					* up_portrait[2]);
-			setLookAtM(exhibitViewMatrix, 0, 0f, 0f, 0f, 0f, 0, -1f, - b, a, 0);
+			setLookAtM(exhibitViewMatrix[ARVIsionActivity.currentPrototypeAfinia], 0, 0f, 0f, 0f, 0f, 0, -1f, - b, a, 0);
 
 		}
 		
@@ -552,14 +559,15 @@ public class ARVisionRenderer implements Renderer {
 				sensorProjectionMatrix, navigationFinalMatrix);
 		
 		// update exhibit posture during sensor update
-		setIdentityM(exhibitRotationMatrix, 0);
-		rotateM(exhibitRotationMatrix, 0, ARVIsionActivity.rotateZ, 0f, 1f, 0f);
-		rotateM(exhibitRotationMatrix, 0, ARVIsionActivity.rotateX, 1f, 0f, 0f);
-		setIdentityM(exhibitTranslationMatrix, 0);
-		translateM(exhibitTranslationMatrix, 0, 0f, 0f, -ARVIsionActivity.zoom*zexhibit/2);
-		multiplyMVP(exhibitRotationMatrix, exhibitTranslationMatrix, exhibitModelMatrix,
-				exhibitViewMatrix, exhibitModelViewMatrix,
-				sensorProjectionMatrix, exhibitFinalMatrix);
+		int order = ARVIsionActivity.currentPrototypeAfinia;
+		setIdentityM(exhibitRotationMatrix[order], 0);
+		rotateM(exhibitRotationMatrix[order], 0, ARVIsionActivity.rotateZ[order], 0f, 1f, 0f);
+		rotateM(exhibitRotationMatrix[order], 0, ARVIsionActivity.rotateX[order], 1f, 0f, 0f);
+		setIdentityM(exhibitTranslationMatrix[order], 0);
+		translateM(exhibitTranslationMatrix[order], 0, 0f, 0f, -ARVIsionActivity.zoom[order]*zexhibit[order]/2);
+		multiplyMVP(exhibitRotationMatrix[order], exhibitTranslationMatrix[order], exhibitModelMatrix[order],
+				exhibitViewMatrix[order], exhibitModelViewMatrix[order],
+				sensorProjectionMatrix, exhibitFinalMatrix[order]);
 	}
 	
 	// ---------------------- Helper functions -----------------------

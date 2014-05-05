@@ -43,6 +43,10 @@
           android:visible="false"
           android:showAsAction="always" />
     
+    <item android:id="@+id/action_back"
+          android:visible="false"
+          android:showAsAction="always" />
+    
     <item android:id="@+id/action_prev"
           android:title="@string/action_prev_prototype"
           android:visible="false"
