@@ -25,8 +25,10 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.DialogInterface;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -63,8 +65,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 {   
 	Menu actionBarMenu;
 	
-    static public enum modes {modeWorld, modeVisitor, modeApprentice, modeNavigation, modeCalendar};  
-	static public int modeStatus;
+    static public enum modes {modeWorld, modeNavigation, modeCalendar, modeVisitor, modeApprentice}; 
+	static public int currentMode;
     
     static public enum devices {Afinia, ProJet, PhotoStudio, VLSLaserCutter, PowerElectronics}; 
     static final String [] listOfDevices = {"Afinia H-series", "ProJet 3000", "Photo Studio", "VLS Laser Cutter", "Power Electronics"}; 
@@ -72,8 +74,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	
 	// sample for visitor mode
 	static public enum prototypes {TRex, Prototype1, Prototype2};
-	static public int currentPrototypeAfinia, currentPrototypePJ,
-			currentPrototypePE, currentPrototypePS, currentPrototypeLC;
+	static public int currentPrototypeAfinia;
 	
     // calendar state variables
     static public boolean available, scheduled, occupied;
@@ -95,8 +96,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	FrameLayout view;
     // Loading text
     TextView mLoadingText;
-    
-    ApprenticeModeGalleryAdapter mApprenticeModeGalleryAdapter;
+   
+    GalleryAdapter mGalleryAdapter;
 	ViewPager mViewPager;
 	
 	private GestureDetectorCompat mDetector; 
@@ -187,6 +188,13 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	        		currentPrototypeAfinia = prototypes.values().length - 1;
 	            break;
 	            
+	        case R.id.action_back:
+	            currentMode = modes.modeWorld.ordinal();
+	            setViewsInvisible();
+    			mCameraView.setVisibility(View.VISIBLE);
+    			actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
+	        	break;
+	            
 	        case R.id.action_cb_occupied:
 	        	isChecked = item.isChecked();
 	        	item.setChecked(!isChecked);
@@ -235,15 +243,15 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         mLoadingText = (TextView) findViewById(R.id.loading_text);
         
-        modeStatus = modes.modeWorld.ordinal();
-		currentDevice = devices.Afinia.ordinal();
+        currentMode = modes.modeWorld.ordinal();
+		currentDevice = -1; //devices.Afinia.ordinal();
         currentPrototypeAfinia = prototypes.TRex.ordinal();
         
         available = false;
 	    scheduled = false;
 	    occupied = false;
         
-        mApprenticeModeGalleryAdapter = new ApprenticeModeGalleryAdapter(getFragmentManager());
+        mGalleryAdapter = new GalleryAdapter(getFragmentManager());
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setVisibility(View.INVISIBLE);
         
@@ -263,7 +271,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         timer = new Timer();
         timer.schedule(task, 0l, timerInterval);   
     }
-
+	
     @Override
     protected void onPause() {
     	super.onPause();
@@ -360,7 +368,6 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         else onFailure();
     }
     
-
     void onSuccess(){
         if (mFailed) mFailed = false;
         // Convert the azimuth to degrees in 0.5 degree resolution.
@@ -487,39 +494,21 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 
 		@Override
 		public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-			modeStatus = position;
+			currentMode = position;
 			setViewsInvisible();
 			
-            if (modeStatus == modes.modeWorld.ordinal()) {
+            if (currentMode == modes.modeWorld.ordinal()) {
     			mCameraView.setVisibility(View.VISIBLE);
+    			actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
             }
-            else if (modeStatus == modes.modeVisitor.ordinal()) {
+            else if (currentMode == modes.modeNavigation.ordinal()) {
             	actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(true);
-	    		currentPrototypeAfinia = prototypes.TRex.ordinal();
-    	        currentPrototypePJ = currentPrototypePE = currentPrototypePS = currentPrototypeLC = 0;
-	    		if (currentDevice == devices.Afinia.ordinal()) {
-	    			actionBarMenu.findItem(R.id.action_next).setVisible(true);
-		    		actionBarMenu.findItem(R.id.action_prev).setVisible(true);
-	    		}
-	    		else {
-	    			mViewPager.setAdapter(mApprenticeModeGalleryAdapter);
-	            	mViewPager.setVisibility(View.VISIBLE);
-	    			mViewPager.setCurrentItem(0);
-	    			mViewPager.bringToFront();
-	    		}
-            }                
-            else if (modeStatus == modes.modeApprentice.ordinal()) {
-            	actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(true);
-        		mViewPager.setAdapter(mApprenticeModeGalleryAdapter);
-            	mViewPager.setVisibility(View.VISIBLE);
-    			mViewPager.setCurrentItem(0);
-            }
-            else if (modeStatus == modes.modeNavigation.ordinal()) {
-            	actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(true);
+            	actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
         		mCameraView.setVisibility(View.VISIBLE); 
             }
-            else if (modeStatus == modes.modeCalendar.ordinal()) {
+            else if (currentMode == modes.modeCalendar.ordinal()) {
     			mCameraView.setVisibility(View.VISIBLE); 
+    			actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
     			actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(true);
     			actionBarMenu.findItem(R.id.action_cb_available).setVisible(true);
     			actionBarMenu.findItem(R.id.action_cb_oc_icon).setVisible(true);
@@ -540,8 +529,10 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		mViewPager.setVisibility(View.INVISIBLE);
 		mCameraView.setVisibility(View.INVISIBLE);
 		actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(false);
+		actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(false);
 		actionBarMenu.findItem(R.id.action_next).setVisible(false);
 		actionBarMenu.findItem(R.id.action_prev).setVisible(false);
+		actionBarMenu.findItem(R.id.action_back).setVisible(false);
 		actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(false);
 		actionBarMenu.findItem(R.id.action_cb_available).setVisible(false);
 		actionBarMenu.findItem(R.id.action_cb_oc_icon).setVisible(false);
@@ -557,17 +548,17 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			currentDevice = position;
 			
 			if (currentDevice == devices.Afinia.ordinal() 
-					&& modeStatus == modes.modeVisitor.ordinal()) {
+					&& currentMode == modes.modeVisitor.ordinal()) {
 				actionBarMenu.findItem(R.id.action_next).setVisible(true);
 	    		actionBarMenu.findItem(R.id.action_prev).setVisible(true);
 	    		mViewPager.setVisibility(View.INVISIBLE);
 			}
-			else if (modeStatus == modes.modeApprentice.ordinal()
-					|| modeStatus == modes.modeVisitor.ordinal()) {
-				mApprenticeModeGalleryAdapter.notifyDataSetChanged();
+			else if (currentMode == modes.modeApprentice.ordinal()
+					|| currentMode == modes.modeVisitor.ordinal()) {
+				mGalleryAdapter.notifyDataSetChanged();
     			actionBarMenu.findItem(R.id.action_next).setVisible(false);
 	    		actionBarMenu.findItem(R.id.action_prev).setVisible(false);
-    			mViewPager.setAdapter(mApprenticeModeGalleryAdapter);
+    			mViewPager.setAdapter(mGalleryAdapter);
             	mViewPager.setVisibility(View.VISIBLE);
     			mViewPager.setCurrentItem(0);
 			}
@@ -580,7 +571,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		}				
 	}
 	
-	public class ApprenticeModeGalleryAdapter extends FragmentStatePagerAdapter {
+	public class GalleryAdapter extends FragmentStatePagerAdapter {
 		
 		public int numStepsAfiniaApprentice = 3,
 				numStepsLCApprentice = 4,
@@ -593,13 +584,13 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				numStepsPSVisitor = 1,
 				numStepsPEVisitor = 1;
 		
-		public ApprenticeModeGalleryAdapter(FragmentManager fm) {
+		public GalleryAdapter(FragmentManager fm) {
 			super(fm);
 		}
 
 		@Override
 		public Fragment getItem(int position) {
-			return ApprenticeModeGalleryFragment.newInstance(position + 1);
+			return mGalleryFragment.newInstance(position + 1);
 		}
 
 		@Override
@@ -610,7 +601,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		@Override
 		public int getCount() {
 			int count = 0;
-			if (modeStatus == modes.modeApprentice.ordinal()) {
+			if (currentMode == modes.modeApprentice.ordinal()) {
 				if (currentDevice == devices.Afinia.ordinal())
 					count = numStepsAfiniaApprentice;
 				else if (currentDevice == devices.VLSLaserCutter.ordinal())
@@ -622,7 +613,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				else if (currentDevice == devices.PowerElectronics.ordinal())
 					count = numStepsPEApprentice;
 			}
-			else if (modeStatus == modes.modeVisitor.ordinal()) {
+			else if (currentMode == modes.modeVisitor.ordinal()) {
 				if (currentDevice == devices.VLSLaserCutter.ordinal())
 					count = numStepsLCVisitor;
 				else if (currentDevice == devices.PhotoStudio.ordinal())
@@ -636,18 +627,18 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		}
 	}
 
-	public static class ApprenticeModeGalleryFragment extends Fragment {
+	public static class mGalleryFragment extends Fragment {
 		private static final String ARG_SECTION_NUMBER = "section_number";
 
-		public static ApprenticeModeGalleryFragment newInstance(int sectionNumber) {
-			ApprenticeModeGalleryFragment fragment = new ApprenticeModeGalleryFragment();
+		public static mGalleryFragment newInstance(int sectionNumber) {
+			mGalleryFragment fragment = new mGalleryFragment();
 			Bundle args = new Bundle();
 			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
 			fragment.setArguments(args);
 			return fragment;
 		}
 
-		public ApprenticeModeGalleryFragment() {
+		public mGalleryFragment() {
 		}
 
 		@Override
@@ -658,7 +649,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			textView.setText(Integer.toString(sectionNum));
 			ImageView imgView = (ImageView) rootView.findViewById(R.id.image_view);
 
-			if (modeStatus == modes.modeApprentice.ordinal()) {
+			if (currentMode == modes.modeApprentice.ordinal()) {
 				if (currentDevice == devices.Afinia.ordinal()) {
 					if (sectionNum == 1)
 						imgView.setImageResource(R.drawable.af_step1);
@@ -694,7 +685,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 						imgView.setImageResource(R.drawable.pe_step3);
 				}
 			}
-			else if (modeStatus == modes.modeVisitor.ordinal()) {
+			else if (currentMode == modes.modeVisitor.ordinal()) {
 				if (currentDevice == devices.VLSLaserCutter.ordinal()) {
 					if (sectionNum == 1)
 						imgView.setImageResource(R.drawable.lc_p1);
@@ -758,8 +749,47 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 
 		Log.d("DEBUG", "onLongPress: Angle: " + angle);
 		Log.d("DEBUG", "onLongPress: Device: " + deviceNo);
-		if (deviceNo >= 0)
-			Toast.makeText(getApplicationContext(), listOfDevices[deviceNo], Toast.LENGTH_SHORT).show();
+		if (deviceNo >= 0 && currentMode == modes.modeWorld.ordinal())
+		{
+			currentDevice = devices.values()[deviceNo].ordinal();
+			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+    		alertDialogBuilder.setTitle("Device selected: " + listOfDevices[currentDevice]);
+    		alertDialogBuilder.setMessage("Select one of the following modes");
+    		alertDialogBuilder.setCancelable(true);
+    		alertDialogBuilder.setNegativeButton("Visitor mode",new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog,int id) {
+					currentMode = modes.modeVisitor.ordinal();
+					actionBarMenu.findItem(R.id.action_back).setTitle("Exit Visitor Mode");
+					setViewsInvisible();
+					actionBarMenu.findItem(R.id.action_back).setVisible(true);
+		    		if (currentDevice == devices.Afinia.ordinal()) {
+		    			currentPrototypeAfinia = prototypes.TRex.ordinal();
+		    			actionBarMenu.findItem(R.id.action_next).setVisible(true);
+			    		actionBarMenu.findItem(R.id.action_prev).setVisible(true);
+		    		}
+		    		else {
+		    			mViewPager.setAdapter(mGalleryAdapter);
+		            	mViewPager.setVisibility(View.VISIBLE);
+		    			mViewPager.setCurrentItem(0);
+		    			mViewPager.bringToFront();
+		    		}
+				}
+			});
+    		alertDialogBuilder.setPositiveButton("Apprentice mode",new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog,int id) {
+					setViewsInvisible();
+					currentMode = modes.modeApprentice.ordinal();
+					actionBarMenu.findItem(R.id.action_back).setTitle("Exit Apprentice Mode");
+					actionBarMenu.findItem(R.id.action_back).setVisible(true);
+	        		mViewPager.setAdapter(mGalleryAdapter);
+	            	mViewPager.setVisibility(View.VISIBLE);
+	    			mViewPager.setCurrentItem(0);
+				}
+			});
+     
+			AlertDialog alertDialog = alertDialogBuilder.create();
+			alertDialog.show();
+		}
 	}
 
 	@Override

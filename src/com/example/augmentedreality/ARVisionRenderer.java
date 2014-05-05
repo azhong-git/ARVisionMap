@@ -379,8 +379,8 @@ public class ARVisionRenderer implements Renderer {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-		if (ARVIsionActivity.modeStatus != ARVIsionActivity.modes.modeVisitor.ordinal() 
-				&& ARVIsionActivity.modeStatus != ARVIsionActivity.modes.modeApprentice.ordinal()) {
+		if (ARVIsionActivity.currentMode != ARVIsionActivity.modes.modeVisitor.ordinal() 
+				&& ARVIsionActivity.currentMode != ARVIsionActivity.modes.modeApprentice.ordinal()) {
 			int i = numCaptions;
 	
 			objectProgram.useProgram();
@@ -390,7 +390,7 @@ public class ARVisionRenderer implements Renderer {
 				object[i-numCaptions].draw();
 			}
 			
-			if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeCalendar.ordinal()) {
+			if (ARVIsionActivity.currentMode == ARVIsionActivity.modes.modeCalendar.ordinal()) {
 				int selectedObjs[] = {0, 0, 0};
 				if (ARVIsionActivity.available) {					
 					selectedObjs[0] = 1;
@@ -423,7 +423,7 @@ public class ARVisionRenderer implements Renderer {
 			}
 			
 			transparentProgram.useProgram();
-			if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeNavigation.ordinal()) {
+			if (ARVIsionActivity.currentMode == ARVIsionActivity.modes.modeNavigation.ordinal()) {
 				transparentProgram.setUniforms(navigationFinalMatrix, navigationTexture);
 				navigation.bindData(transparentProgram);
 				navigation.draw();
@@ -436,7 +436,7 @@ public class ARVisionRenderer implements Renderer {
 		}
 		
 		// visitor mode - Afinia
-		if (ARVIsionActivity.modeStatus == ARVIsionActivity.modes.modeVisitor.ordinal()
+		if (ARVIsionActivity.currentMode == ARVIsionActivity.modes.modeVisitor.ordinal()
 				&& ARVIsionActivity.currentDevice == ARVIsionActivity.devices.Afinia.ordinal()){
 			if (ARVIsionActivity.currentPrototypeAfinia == ARVIsionActivity.prototypes.TRex.ordinal()) { 
 				vertexObjectProgram.useProgram();

@@ -16,10 +16,13 @@
 	
 	<string-array name="modes_list">
         <item>World mode</item>
-        <item>Visitor mode</item>
-        <item>Apprentice mode</item>
         <item>Navigation mode</item>
         <item>Calendar mode</item>
+    </string-array>
+    
+	<string-array name="device_specific_modes">
+        <item>Visitor mode</item>
+        <item>Apprentice mode</item>
     </string-array>
     
 	<string-array name="devices_list">
