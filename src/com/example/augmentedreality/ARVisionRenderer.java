@@ -142,6 +142,7 @@ public class ARVisionRenderer implements Renderer {
 	private RawObject[] object;
 	private int [] rawObjTextureMap = {R.drawable.surfobj, R.drawable.tableobj, R.drawable.chairobj};
 	private int [] rawObjTexture = {R.drawable.surf, R.drawable.table, R.drawable.chair};
+	private float [][] rawObjPallette = {{0.2f,0.4f,1f,0.8f}, {0f,0.5f,0f,0.8f}, {1f,0.84f,0f,0.6f}};
 	// compass object
 	private Square compass;
 	private int compassTexture;
@@ -448,7 +449,7 @@ public class ARVisionRenderer implements Renderer {
 			{ 
 				int order = ARVIsionActivity.currentPrototypeAfinia;
 				vertexObjectProgram.useProgram();
-				vertexObjectProgram.setUniforms(exhibitFinalMatrix[order]);
+				vertexObjectProgram.setUniforms(exhibitFinalMatrix[order], rawObjPallette[order]);
 				vertexObject[order].bindData(vertexObjectProgram);
 				vertexObject[order].draw();
 			}

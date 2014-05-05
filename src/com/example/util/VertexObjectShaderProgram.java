@@ -21,9 +21,9 @@ public class VertexObjectShaderProgram extends Program {
 		aPositionLocation = glGetAttribLocation(program, A_POSITION);
 	}
 	
-	public void setUniforms(float [] matrix) {
+	public void setUniforms(float [] matrix, float [] color) {
 		glUniformMatrix4fv(uMatrixLocation, 1, false, matrix, 0);
-		glUniform4f(uColorLocation,0.2f,0.4f,1f,0.8f);
+		glUniform4f(uColorLocation,color[0],color[1],color[2],color[3]);
 	}
 	
 	public int getPositionAttributeLocation() {
