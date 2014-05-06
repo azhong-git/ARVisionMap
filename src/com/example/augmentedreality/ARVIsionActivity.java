@@ -183,7 +183,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				R.array.devices_list, android.R.layout.simple_spinner_dropdown_item);
 		devicesSpinner.setAdapter(devicesSpinnerAdapter);
 		devicesSpinner.setOnItemSelectedListener(new DevicesHandler());	        
-        
+		
 		return true;
 	}
 	  
@@ -227,7 +227,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	        	item.setChecked(!isChecked);
 	        	occupied = !isChecked;
 	        	if (occupied)
-	        		actionBarMenu.findItem(R.id.action_cb_oc_icon).setIcon(R.drawable.square_green);
+	        		actionBarMenu.findItem(R.id.action_cb_oc_icon).setIcon(R.drawable.square_red);
 	        	else
 	        		actionBarMenu.findItem(R.id.action_cb_oc_icon).setIcon(R.drawable.square_white);
 	            break;
@@ -247,7 +247,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	        	item.setChecked(!isChecked);
 	        	scheduled = !isChecked;
 	        	if (scheduled)
-	        		actionBarMenu.findItem(R.id.action_cb_sc_icon).setIcon(R.drawable.square_green);
+	        		actionBarMenu.findItem(R.id.action_cb_sc_icon).setIcon(R.drawable.square_blue);
 	        	else
 	        		actionBarMenu.findItem(R.id.action_cb_sc_icon).setIcon(R.drawable.square_white);
 	            break;
@@ -777,7 +777,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		float half = (x-600)/600*(float)(Math.tan(Math.toRadians(35)) * ARVisionRenderer.near);
 		
 		float angle = (float) (mAzimuth + Math.toDegrees(Math.atan(half/ARVisionRenderer.near)));
-		// angle -= 20;
+		angle -= 20;
 		int deviceNo = ARVisionRenderer.getNearestDevice((float)dx, (float)dy, (float)dz, angle);
 
 		Log.d("DEBUG", "onLongPress: Angle: " + angle);
@@ -830,6 +830,16 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				mCalendarWebView.setVisibility(View.VISIBLE);
 				mCalendarWebView.loadUrl(calendarURLs[currentDevice]);
 				actionBarMenu.findItem(R.id.action_back_calendar).setVisible(true);
+			}
+			else if (currentMode == modes.modeNavigation.ordinal()) {
+				// Enable long press functionality for navigation mode
+				currentDevice = devices.values()[deviceNo].ordinal();
+				Spinner devicesSpinner = (Spinner) actionBarMenu.findItem(R.id.action_devices_spinner).getActionView();
+				SpinnerAdapter devicesSpinnerAdapter = ArrayAdapter.createFromResource(getActionBar().getThemedContext(),
+						R.array.devices_list, android.R.layout.simple_spinner_dropdown_item);
+				devicesSpinner.setAdapter(devicesSpinnerAdapter);
+				devicesSpinner.setOnItemSelectedListener(new DevicesHandler());
+				devicesSpinner.setSelection(currentDevice);
 			}
 		}
 
