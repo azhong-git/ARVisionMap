@@ -97,6 +97,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	FrameLayout view;
     // Loading text
     TextView mLoadingText;
+    // Long press suggestion text
+    TextView mLongPressText;
    
     GalleryAdapter mGalleryAdapter;
 	ViewPager mViewPager;
@@ -207,12 +209,14 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	            currentMode = modes.modeWorld.ordinal();
 	            setViewsInvisible();
     			mCameraView.setVisibility(View.VISIBLE);
+    			mLongPressText.setVisibility(View.VISIBLE);
     			actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
 	        	break;
 	            
 	        case R.id.action_back_calendar:
 	        	setViewsInvisible();
-	        	mCameraView.setVisibility(View.VISIBLE); 
+	        	mCameraView.setVisibility(View.VISIBLE);
+	        	mCameraView.setVisibility(View.VISIBLE);
     			actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
     			actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(true);
     			actionBarMenu.findItem(R.id.action_cb_available).setVisible(true);
@@ -269,6 +273,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 
         view = (FrameLayout) findViewById(R.id.camera_preview);           
         mLoadingText = (TextView) findViewById(R.id.loading_text);
+        mLongPressText = (TextView) findViewById(R.id.longpress_world_text);
+        mLongPressText.setVisibility(View.INVISIBLE);
         
         currentMode = modes.modeWorld.ordinal();
 		currentDevice = -1; //devices.Afinia.ordinal();
@@ -350,6 +356,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 				@Override
 				public void run() {						
 					mLoadingText.setVisibility(View.VISIBLE);
+					mLongPressText.setVisibility(View.INVISIBLE);
 				}
 			});
         }
@@ -357,7 +364,8 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
         	runOnUiThread(new Runnable() {
 				@Override
 				public void run() {						
-					mLoadingText.setVisibility(View.INVISIBLE);	
+					mLoadingText.setVisibility(View.INVISIBLE);
+					mLongPressText.setVisibility(View.VISIBLE);
 				}
 			});
         }
@@ -529,15 +537,18 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 			
             if (currentMode == modes.modeWorld.ordinal()) {
     			mCameraView.setVisibility(View.VISIBLE);
+    			mCameraView.setVisibility(View.VISIBLE);
     			actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
             }
             else if (currentMode == modes.modeNavigation.ordinal()) {
             	actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(true);
             	actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
-        		mCameraView.setVisibility(View.VISIBLE); 
+        		mCameraView.setVisibility(View.VISIBLE);
+        		mCameraView.setVisibility(View.VISIBLE);
             }
             else if (currentMode == modes.modeCalendar.ordinal()) {
-    			mCameraView.setVisibility(View.VISIBLE); 
+    			mCameraView.setVisibility(View.VISIBLE);
+    			mCameraView.setVisibility(View.VISIBLE);
     			actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(true);
     			actionBarMenu.findItem(R.id.action_cb_av_icon).setVisible(true);
     			actionBarMenu.findItem(R.id.action_cb_available).setVisible(true);
@@ -559,6 +570,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 		mViewPager.setVisibility(View.INVISIBLE);
 		mCameraView.setVisibility(View.INVISIBLE);
 		mCalendarWebView.setVisibility(View.INVISIBLE);
+		mLongPressText.setVisibility(View.INVISIBLE);
 		actionBarMenu.findItem(R.id.action_devices_spinner).setVisible(false);
 		actionBarMenu.findItem(R.id.action_modes_spinner).setVisible(false);
 		actionBarMenu.findItem(R.id.action_next).setVisible(false);
@@ -772,12 +784,15 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 	@Override
 	public void onLongPress(MotionEvent arg0) {
 		// TODO Auto-generated method stub
-		Log.d("DEBUG", "onLongPress: " + arg0.toString());
+		//Log.d("DEBUG", "onLongPress: " + arg0.toString());
 		float x = arg0.getX();
-		float half = (x-600)/600*(float)(Math.tan(Math.toRadians(35)) * ARVisionRenderer.near);
+		float half = (x-960)/960*(float)(Math.tan(Math.toRadians(47)) * ARVisionRenderer.near);
 		
 		float angle = (float) (mAzimuth + Math.toDegrees(Math.atan(half/ARVisionRenderer.near)));
-		angle -= 20;
+		//Log.d("DEBUG", "onLongPress: Angle: " + angle);
+		
+		// Offset for Nexus 7
+//		angle -=37;
 		int deviceNo = ARVisionRenderer.getNearestDevice((float)dx, (float)dy, (float)dz, angle);
 
 		Log.d("DEBUG", "onLongPress: Angle: " + angle);
@@ -797,6 +812,7 @@ GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener
 						setViewsInvisible();
 						actionBarMenu.findItem(R.id.action_back).setVisible(true);
 			    		if (currentDevice == devices.Afinia.ordinal()) {
+			    			mLongPressText.setVisibility(View.INVISIBLE);
 			    			currentPrototypeAfinia = prototypes.TRex.ordinal();
 			    			actionBarMenu.findItem(R.id.action_next).setVisible(true);
 				    		actionBarMenu.findItem(R.id.action_prev).setVisible(true);

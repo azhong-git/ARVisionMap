@@ -24,6 +24,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView.Renderer;
+import android.util.Log;
 
 import com.example.objects.Arrow;
 import com.example.objects.BannerNon;
@@ -579,8 +580,11 @@ public class ARVisionRenderer implements Renderer {
 	}
 	
 	static int getNearestDevice(float dx, float dy, float dz, float mAzimuth) {
-		float minDiff = 5;
-		
+		// setting for Nexus 5 (phone)
+		float minDiff = 15;
+		// setting for Nexus 7 (tablet)
+		//float minDiff = 15;
+		Log.d("DEBUG", "onLongPress: " + -computeRotation(dx, dy, dz, objLoc[numCaptions + numRawObjects + 0]));
 		for (int i = 0; i < numArrows; i++) {
 			if (Math.abs((-computeRotation(dx, dy, dz, objLoc[numCaptions + numRawObjects + i]) - mAzimuth)) % 360
 					< minDiff 

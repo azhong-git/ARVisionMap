@@ -9,7 +9,7 @@
     <FrameLayout
         android:id="@+id/camera_preview"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent" >
+        android:layout_height="fill_parent" >        
     </FrameLayout>
     
     <TextView
@@ -20,6 +20,17 @@
         android:textColor="#ffffff"
         android:layout_centerInParent="true"
         android:textSize="60sp"> 
+    </TextView>
+    
+    
+    <TextView
+        android:id="@+id/longpress_world_text"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="70dp"
+        android:text="@string/longpress_world_string"
+        android:textColor="#aa00ff"
+        android:textSize="24sp"> 
     </TextView>
     
     <android.support.v4.view.ViewPager 
