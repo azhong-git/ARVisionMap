@@ -1,4 +1,4 @@
 ARVisionMap
 =========== 
 #####Augmented Reality Map Based on Simulated Indoor Positioning
-Nahush Bhange, Chun-Yuan Yang, Andrew Zhong
+Nahush Bhanage, Chun-Yuan Yang, Andrew Zhong
