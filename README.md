@@ -1,6 +1,6 @@
 ARVisionMap
 =========== 
-###An User Interface Framework for Augmented Reality Assisted Indoor Navigation Systems
+###A User Interface Framework for Augmented Reality Assisted Indoor Navigation Systems
 ####Authors: Nahush Bhanage, Chun-Yuan Yang, Andrew Zhong
 
 ###Introduction
